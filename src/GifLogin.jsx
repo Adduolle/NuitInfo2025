@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Search, User, LogOut, Image as ImageIcon, Sparkles, ArrowRight, X } from "lucide-react";
 import "./index.css"; // Ensure styles are applied
+import MerguezAuth from "./MerguezAuth";
 
 export default function GifLogin() {
   // Use environment variable or fallback for demo
@@ -231,21 +232,12 @@ export default function GifLogin() {
                 </div>
               </div>
 
-              {/* PASSWORD INPUT */}
+              {/* MERGUEZ AUTH */}
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Password</label>
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔒</div>
-                  <input
-                    type="password"
-                    className="input-field"
-                    style={{ paddingLeft: '40px' }}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your secret code"
-                    required
-                  />
-                </div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  Security Verification: Grill your Merguez
+                </label>
+                <MerguezAuth onUpdate={(times) => setPassword(JSON.stringify(times))} />
               </div>
 
               <button type="submit" className="btn" style={{ justifyContent: 'center', marginTop: '1rem' }}>
