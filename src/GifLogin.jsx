@@ -52,20 +52,49 @@ export default function GifLogin() {
     }
   }
 
-  function handleLogin(e) {
+  const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  async function handleLogin(e) {
     e.preventDefault();
+    
     if (!selectedGif) {
-      alert("Please choose a GIF to login! 🎨");
+      alert("Please choose your Identity GIF! 🎨");
       return;
     }
-    setLoggedIn(true);
-  }
 
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setSelectedGif(null);
-    setUsername("");
-  };
+    const endpoint = isRegistering ? "register" : "login";
+    const payload = { password, gifUrl: selectedGif.url };
+
+    try {
+      const res = await fetch(`http://localhost:3001/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        if (isRegistering) {
+          alert("Identity registered! Please login with your GIF.");
+          setIsRegistering(false);
+          setSelectedGif(null); // Clear selection to force them to pick it again to login
+        } else {
+          setLoggedIn(true);
+          // Ensure the selected GIF matches what the backend has (should be same)
+          if (data.gifUrl) {
+            setSelectedGif({ url: data.gifUrl, preview: data.gifUrl });
+          }
+        }
+      } else {
+        alert(data.error || "Authentication failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Connection error");
+    }
+  }
 
   return (
     <div className="app-container animate-fade-in" style={{ width: '100%', maxWidth: '1000px', padding: '2rem' }}>
@@ -75,55 +104,70 @@ export default function GifLogin() {
         <div className="login-section" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {loggedIn ? `Welcome back!` : 'GifLogin'}
+              {loggedIn ? `Welcome back!` : (isRegistering ? 'Claim your GIF' : 'Identify Yourself')}
             </h1>
             <p style={{ color: 'var(--text-muted)' }}>
-              {loggedIn ? 'You are authenticated with style.' : 'Authenticate with your vibe, not just a password.'}
+              {loggedIn ? 'You are authenticated with style.' : 'Your GIF is your username. Choose wisely.'}
             </p>
           </div>
 
           {!loggedIn ? (
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Username (Optional)</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    className="input-field"
-                    style={{ paddingLeft: '40px' }}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Your Identity GIF</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  {isRegistering ? "Choose your Identity GIF" : "Select your Identity GIF"}
+                </label>
                 <div 
                   onClick={() => setShowPicker(true)}
                   className="input-field"
-                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', padding: '8px', minHeight: '80px' }}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', padding: '8px', minHeight: '80px', border: !selectedGif ? '1px dashed var(--primary)' : '1px solid var(--glass-border)' }}
                 >
                   {selectedGif ? (
                     <>
                       <img src={selectedGif.url} alt="Selected" style={{ width: '64px', height: '64px', borderRadius: '8px', objectFit: 'cover' }} />
-                      <span style={{ color: 'var(--success)' }}>GIF Selected</span>
+                      <span style={{ color: 'var(--success)' }}>Identity Selected</span>
                     </>
                   ) : (
                     <>
                       <div style={{ width: '64px', height: '64px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <ImageIcon size={24} color="var(--text-muted)" />
                       </div>
-                      <span style={{ color: 'var(--text-muted)' }}>Tap to choose a GIF...</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Tap to find your GIF...</span>
                     </>
                   )}
                 </div>
               </div>
 
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔒</div>
+                  <input
+                    type="password"
+                    className="input-field"
+                    style={{ paddingLeft: '40px' }}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your secret code"
+                    required
+                  />
+                </div>
+              </div>
+
               <button type="submit" className="btn" style={{ justifyContent: 'center', marginTop: '1rem' }}>
-                Enter the Portal <ArrowRight size={18} />
+                {isRegistering ? 'Claim Identity' : 'Enter the Portal'} <ArrowRight size={18} />
               </button>
+
+              <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                <button 
+                  type="button"
+                  onClick={() => setIsRegistering(!isRegistering)}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {isRegistering ? 'Already have an identity? Login' : "Need an identity? Register"}
+                </button>
+              </div>
             </form>
           ) : (
             <div className="profile-view animate-fade-in">
@@ -132,7 +176,7 @@ export default function GifLogin() {
                   {selectedGif && <img src={selectedGif.url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '1.8rem' }}>{username || 'Gif Master'}</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.8rem' }}>Gif Master</h2>
                   <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                     ● Online
                   </span>
