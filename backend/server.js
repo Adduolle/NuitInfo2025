@@ -8,7 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/giflogin");
+mongoose
+  .connect(
+    "mongodb+srv://project:root@cluster0.h5xccde.mongodb.net/giflogin?retryWrites=true&w=majority"
+  )
+  .then(() => console.log("Connected to MongoDB Atlas"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // MODEL
 const User = mongoose.model("User", {
