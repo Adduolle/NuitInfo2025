@@ -15,6 +15,25 @@ export default function GifLogin() {
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("http://localhost:3001/verify", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.gifUrl) {
+          setLoggedIn(true);
+          setSelectedGif({ url: data.gifUrl, preview: data.gifUrl });
+        } else {
+          localStorage.removeItem("token");
+        }
+      })
+      .catch(() => localStorage.removeItem("token"));
+    }
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (query) searchGifs(query);
     }, 500);
@@ -80,6 +99,7 @@ export default function GifLogin() {
           setSelectedGif(null); // Clear selection to force them to pick it again to login
         } else {
           setLoggedIn(true);
+          localStorage.setItem("token", data.token); // Save session
           // Ensure the selected GIF matches what the backend has (should be same)
           if (data.gifUrl) {
             setSelectedGif({ url: data.gifUrl, preview: data.gifUrl });
@@ -94,24 +114,98 @@ export default function GifLogin() {
     }
   }
 
-  return (
-    <div className="app-container animate-fade-in" style={{ width: '100%', maxWidth: '1000px', padding: '2rem' }}>
-      <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: loggedIn ? '1fr' : '1fr 1fr', gap: '2rem', padding: '2rem', minHeight: '600px', transition: 'all 0.5s ease' }}>
-        
-        {/* Left Side: Login Form / User Profile */}
-        <div className="login-section" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {loggedIn ? `Welcome back!` : (isRegistering ? 'Claim your GIF' : 'Identify Yourself')}
-            </h1>
-            <p style={{ color: 'var(--text-muted)' }}>
-              {loggedIn ? 'You are authenticated with style.' : 'Your GIF is your username. Choose wisely.'}
-            </p>
-          </div>
+  const handleLogout = () => {
+    setLoggedIn(false);
+    setSelectedGif(null);
+    setUsername("");
+    localStorage.removeItem("token"); // Clear session
+  };
 
-          {!loggedIn ? (
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // ... (keep existing state and logic: query, gifs, selectedGif, loading, password, isRegistering, loggedIn, etc.)
+  // We need to make sure we don't lose the state logic.
+
+  // ... (keep useEffects and searchGifs)
+
+  // ... (keep handleLogin and handleLogout)
+  
+  // WRAPPER for the whole component
+  return (
+    <>
+      {/* HEADER / BANNER */}
+      <header style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        height: '80px', 
+        background: 'rgba(15, 23, 42, 0.8)', 
+        backdropFilter: 'blur(12px)', 
+        borderBottom: '1px solid var(--glass-border)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        padding: '0 2rem', 
+        zIndex: 50 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Sparkles size={24} color="var(--primary)" />
+          <h1 style={{ fontSize: '1.5rem', margin: 0, background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            GifLogin
+          </h1>
+        </div>
+
+        <div>
+          {loggedIn ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ textAlign: 'right', display: 'none', md: 'block' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Gif Master</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--success)' }}>● Online</div>
+              </div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--primary)' }}>
+                {selectedGif && <img src={selectedGif.url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </div>
+              <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '8px', borderRadius: '8px' }}>
+                <LogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowLoginModal(true)} className="btn">
+              Login / Register
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* MAIN CONTENT PLACEHOLDER (The "Free Body") */}
+      <main style={{ paddingTop: '100px', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+        <h2>Welcome to the Index</h2>
+        <p>The body is now free for your content.</p>
+      </main>
+
+      {/* LOGIN MODAL */}
+      {(showLoginModal && !loggedIn) && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button 
+              onClick={() => setShowLoginModal(false)} 
+              style={{ position: 'absolute', right: '1rem', top: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <X size={24} />
+            </button>
+
+            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>
+                {isRegistering ? 'Join the Party' : 'Identify Yourself'}
+              </h2>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {isRegistering ? 'Claim your GIF identity.' : 'Login with your GIF.'}
+              </p>
+            </div>
+
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              
+              {/* GIF PICKER INPUT */}
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   {isRegistering ? "Choose your Identity GIF" : "Select your Identity GIF"}
@@ -137,6 +231,7 @@ export default function GifLogin() {
                 </div>
               </div>
 
+              {/* PASSWORD INPUT */}
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Password</label>
                 <div style={{ position: 'relative' }}>
@@ -167,88 +262,13 @@ export default function GifLogin() {
                 </button>
               </div>
             </form>
-          ) : (
-            <div className="profile-view animate-fade-in">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '20px', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' }}>
-                  {selectedGif && <img src={selectedGif.url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                </div>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '1.8rem' }}>Gif Master</h2>
-                  <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                    ● Online
-                  </span>
-                </div>
-              </div>
-              <button onClick={handleLogout} className="btn btn-secondary">
-                <LogOut size={18} /> Sign Out
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Right Side: Decorative or Picker (Desktop) */}
-        {!loggedIn && (
-          <div className="picker-section" style={{ borderLeft: '1px solid var(--glass-border)', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={18} color="var(--accent)" /> GIF Gallery
-              </h3>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  className="input-field"
-                  style={{ paddingLeft: '36px', fontSize: '0.9rem', paddingTop: '8px', paddingBottom: '8px' }}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search vibes..."
-                  onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                {['Cyberpunk', 'Retro', 'Abstract'].map(tag => (
-                  <button 
-                    key={tag}
-                    onClick={() => setQuery(tag)}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer' }}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="gif-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', overflowY: 'auto', flex: 1, paddingRight: '8px' }}>
-              {loading ? (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading visuals...</div>
-              ) : (
-                gifs.map((g) => (
-                  <div 
-                    key={g.id} 
-                    onClick={() => { setSelectedGif(g); setShowPicker(false); }}
-                    style={{ 
-                      borderRadius: '8px', 
-                      overflow: 'hidden', 
-                      cursor: 'pointer', 
-                      height: '100px', 
-                      border: selectedGif?.id === g.id ? '2px solid var(--primary)' : '2px solid transparent',
-                      transition: 'transform 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    <img src={g.preview || g.url} alt="gif" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                ))
-              )}
-            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Mobile Picker Modal */}
+      {/* GIF PICKER MODAL (Nested or Separate? Separate is better for z-index) */}
       {showPicker && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', height: '80vh', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0 }}>Select GIF</h3>
@@ -264,18 +284,25 @@ export default function GifLogin() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
                 autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
               />
-              <button 
-                onClick={() => searchGifs(query)}
-                style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'var(--primary)', border: 'none', borderRadius: '8px', padding: '4px 12px', color: 'white', cursor: 'pointer' }}
-              >
-                Go
-              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                {['Cyberpunk', 'Retro', 'Abstract'].map(tag => (
+                  <button 
+                    key={tag}
+                    onClick={() => setQuery(tag)}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                    {tag}
+                  </button>
+                ))}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', overflowY: 'auto', flex: 1 }}>
               {gifs.map((g) => (
-                <div key={g.id} onClick={() => { setSelectedGif(g); setShowPicker(false); }} style={{ borderRadius: '8px', overflow: 'hidden', height: '100px' }}>
+                <div key={g.id} onClick={() => { setSelectedGif(g); setShowPicker(false); }} style={{ borderRadius: '8px', overflow: 'hidden', height: '100px', cursor: 'pointer' }}>
                   <img src={g.preview || g.url} alt="gif" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               ))}
@@ -283,6 +310,6 @@ export default function GifLogin() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
