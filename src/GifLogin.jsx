@@ -4,7 +4,7 @@ import "./index.css"; // Ensure styles are applied
 
 export default function GifLogin() {
   // Use environment variable or fallback for demo
-  const TENOR_KEY = "LIVDSRZULELA"; // Public test key
+  const TENOR_KEY = "AIzaSyCXd0U7IrdjfOTNZxlxo-CmDuPSz_lEFEo";
 
   const [query, setQuery] = useState("funny cat");
   const [gifs, setGifs] = useState([]);
@@ -14,14 +14,17 @@ export default function GifLogin() {
   const [username, setUsername] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
 
-
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (query) searchGifs(query);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [query]);
+    if (TENOR_KEY && TENOR_KEY !== "YOUR_TENOR_API_KEY") {
+      searchGifs(query);
+    } else {
+      // Demo data
+      setGifs([
+        { id: "demo-1", url: "https://media.tenor.com/images/3b0e4f1e2f9fcd7c6a1b0d2f7f2a7b75/tenor.gif", preview: "https://media.tenor.com/images/3b0e4f1e2f9fcd7c6a1b0d2f7f2a7b75/tenor.gif" },
+        { id: "demo-2", url: "https://media.tenor.com/images/8c9d9b7b6d6f8b6a3d4d5c6b7a8f9e1a/tenor.gif", preview: "https://media.tenor.com/images/8c9d9b7b6d6f8b6a3d4d5c6b7a8f9e1a/tenor.gif" },
+      ]);
+    }
+  }, []);
 
   async function searchGifs(q) {
     setLoading(true);
@@ -31,16 +34,8 @@ export default function GifLogin() {
       const data = await res.json();
       const mapped = (data.results || []).map((r) => {
         const media = r.media && r.media[0];
-        // Prefer smaller formats for preview
-        const preview = (media && media.tinygif && media.tinygif.url) || 
-                        (media && media.nanogif && media.nanogif.url) || 
-                        (media && media.gif && media.gif.url);
-        
-        // Prefer medium quality for selection
-        const gifUrl = (media && media.mediumgif && media.mediumgif.url) || 
-                       (media && media.gif && media.gif.url) || 
-                       r.url;
-                       
+        const gifUrl = (media && media.gif && media.gif.url) || (media && media.mediumgif && media.mediumgif.url) || r.url;
+        const preview = (media && media.preview && media.preview.url) || gifUrl;
         return { id: r.id, url: gifUrl, preview };
       });
       setGifs(mapped);
@@ -204,14 +199,14 @@ export default function GifLogin() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search vibes..."
-                  onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                  onKeyDown={(e) => e.key === 'Enter' && searchGifs(query)}
                 />
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {['Cyberpunk', 'Retro', 'Abstract'].map(tag => (
                   <button 
                     key={tag}
-                    onClick={() => setQuery(tag)}
+                    onClick={() => { setQuery(tag); searchGifs(tag); }}
                     style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer' }}
                   >
                     {tag}
