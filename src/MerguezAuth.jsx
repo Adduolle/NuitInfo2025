@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 export default function MerguezAuth({ onUpdate }) {
   const [times, setTimes] = useState([0, 0, 0, 0, 0]);
+  const [isVeggie, setIsVeggie] = useState(false);
   
   // Notify parent whenever times change
   useEffect(() => {
@@ -10,6 +11,19 @@ export default function MerguezAuth({ onUpdate }) {
 
   return (
     <div style={{ width: '100%', padding: '1rem', background: '#222', borderRadius: '12px', color: '#eee' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1rem', color: isVeggie ? '#FF9999' : '#ff7a4d' }}>
+          {isVeggie ? '🐟 Salmon Grill' : '🌭 Merguez Party'}
+        </h3>
+        <button 
+          type="button"
+          onClick={() => setIsVeggie(!isVeggie)}
+          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+        >
+          {isVeggie ? 'Switch to Merguez' : 'Switch to Salmon'}
+        </button>
+      </div>
+
       <div id="barbecue" style={{
         width: '100%',
         height: '200px',
@@ -35,7 +49,7 @@ export default function MerguezAuth({ onUpdate }) {
         
         <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', zIndex: 2, height: '100%' }}>
           {times.map((time, index) => (
-            <Merguez key={index} id={index} onStop={(t) => {
+            <Merguez key={index} id={index} isVeggie={isVeggie} onStop={(t) => {
               const newTimes = [...times];
               newTimes[index] = t;
               setTimes(newTimes);
@@ -45,13 +59,13 @@ export default function MerguezAuth({ onUpdate }) {
       </div>
       
       <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#aaa', marginTop: '10px' }}>
-        ⚠️ Retenez bien la cuisson de vos merguez pour vous reconnecter !
+        ⚠️ Retenez bien la cuisson de vos {isVeggie ? 'pavés de saumon' : 'merguez'} pour vous reconnecter !
       </div>
     </div>
   );
 }
 
-function Merguez({ id, onStop }) {
+function Merguez({ id, onStop, isVeggie }) {
   const [grilling, setGrilling] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const requestRef = useRef();
@@ -88,24 +102,52 @@ function Merguez({ id, onStop }) {
 
   // Calculate color
   const t = Math.min(elapsed / 10, 1);
-  const r = Math.floor(255 * (1 - t));
-  const g = Math.floor(122 * (1 - t));
-  const b = Math.floor(77 * (1 - t));
+  
+  let r, g, b, texture;
+  
+  if (isVeggie) {
+    // SALMON: Pink (#FF9999) to Cooked Pink/Brown (#D48872) to Burnt (#333)
+    // Start: 255, 153, 153
+    // End: 50, 30, 30
+    r = Math.floor(255 - (205 * t));
+    g = Math.floor(153 - (123 * t));
+    b = Math.floor(153 - (123 * t));
+    
+    // Salmon texture: Realistic orange-pink with white fat stripes
+    texture = `
+      repeating-linear-gradient(-45deg, 
+        rgba(255,255,255,0.3) 0px, 
+        rgba(255,255,255,0.3) 1px, 
+        transparent 2px, 
+        transparent 12px
+      ),
+      linear-gradient(90deg, rgba(255,255,255,0.2) 0%, transparent 40%, rgba(0,0,0,0.2) 100%)
+    `;
+  } else {
+    // MERGUEZ: Orange (#ff7a4d) to Black
+    r = Math.floor(255 * (1 - t));
+    g = Math.floor(122 * (1 - t));
+    b = Math.floor(77 * (1 - t));
+    
+    texture = `
+      linear-gradient(90deg, rgba(255,255,255,0.4) 0%, transparent 40%, rgba(0,0,0,0.3) 100%),
+      repeating-linear-gradient(180deg, transparent, transparent 30px, rgba(0,0,0,0.2) 32px, rgba(0,0,0,0.3) 35px),
+      radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 1px, transparent 2px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,0.3) 1px, transparent 2px)
+    `;
+  }
+
   const color = `rgb(${r},${g},${b})`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'space-between' }}>
       <div style={{
-        width: '34px',
-        height: '100%',
-        borderRadius: '17px',
+        width: isVeggie ? '45px' : '26px', // Merguez slightly thinner
+        height: isVeggie ? '80%' : '130%', // Merguez EVEN LONGER
+        marginTop: isVeggie ? '10%' : '-15%', // Center vertically
+        borderRadius: isVeggie ? '4px' : '999px',
         backgroundColor: color,
-        backgroundImage: `
-          linear-gradient(90deg, rgba(255,255,255,0.4) 0%, transparent 40%, rgba(0,0,0,0.3) 100%),
-          repeating-linear-gradient(180deg, transparent, transparent 30px, rgba(0,0,0,0.2) 32px, rgba(0,0,0,0.3) 35px),
-          radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3) 1px, transparent 2px),
-          radial-gradient(circle at 70% 60%, rgba(255,255,255,0.3) 1px, transparent 2px)
-        `,
+        backgroundImage: texture,
         transition: 'background-color 0.1s linear',
         boxShadow: 'inset -2px -2px 6px rgba(0,0,0,0.3), 2px 4px 8px rgba(0,0,0,0.4)',
         transform: `rotate(${id % 2 === 0 ? '1deg' : '-1deg'}) scaleY(0.98)`,
@@ -119,7 +161,7 @@ function Merguez({ id, onStop }) {
           <button 
             type="button"
             onClick={startGrilling}
-            style={{ background: '#ff7a4d', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.7rem', color: 'white' }}
+            style={{ background: isVeggie ? '#FF9999' : '#ff7a4d', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.7rem', color: isVeggie ? '#333' : 'white' }}
           >
             Grill
           </button>
