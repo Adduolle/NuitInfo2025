@@ -16,7 +16,6 @@ export default function App() {
         <Route path="/quiz-click-trap" element={<ClickTrapQuiz />}/> 
         <Route path="/pc-builder-game" element={<PCBuilderGame />}/> 
         <Route path="/contact" element={<Contact />}/> 
-        <Route path="/ProfileTest" element={<ProfileTest />}/>
         <Route path="/inclusion" element={<Inclusion />} />
         <Route path="/Profile" element={<Profile />}/> 
       </Routes>
