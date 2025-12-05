@@ -20,7 +20,7 @@ Bienvenue sur le **Goofy Ahh Website**, une expérience web immersive et interac
 Avant de commencer, assurez-vous d'avoir installé :
 
 - **Node.js** (v18 ou supérieur)
-- **MongoDB** (pour la base de données locale)
+- **MongoDB Atlas** (Base de données Cloud, déjà configurée dans le projet)
 - **Git**
 
 ## 📦 Installation
