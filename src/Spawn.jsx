@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useNavigate } from 'react-router-dom';
 import { Gamepad2, LogIn } from 'lucide-react';
 
-const Scene3D = ({ playButtonRef, setDebugName }) => {
+const Scene3D = ({ onGameClick, setDebugName }) => {
   const clock = new THREE.Clock();
   let mixer = null;
   useEffect(() => {
@@ -70,6 +70,20 @@ const Scene3D = ({ playButtonRef, setDebugName }) => {
       maisonLeft.scale.set(3, 3, 3);
       maisonLeft.position.set(-1.6, 0, 6);
       maisonLeft.rotation.y = -Math.PI / 2;
+
+      // Make it interactable (PC Builder)
+      maisonLeft.traverse((child) => {
+        if (child.isMesh) {
+          // Only add the door meshes
+          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
+             console.log("Adding interactable object (PC Builder):", child.name);
+             child.userData.parentGroup = maisonLeft;
+             child.userData.gamePath = '/pc-builder-game'; // Set path
+             interactableObjects.push(child);
+          }
+        }
+      });
+
       scene.add(maisonLeft);
     }, undefined, error => console.error('Erreur maison gauche :', error));
 
@@ -87,6 +101,7 @@ const Scene3D = ({ playButtonRef, setDebugName }) => {
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
              console.log("Adding interactable object:", child.name);
              child.userData.parentGroup = maisonRight; // Link back to parent
+             child.userData.gamePath = '/quiz-click-trap'; // Set path
              interactableObjects.push(child);
           }
         }
@@ -210,16 +225,19 @@ const Scene3D = ({ playButtonRef, setDebugName }) => {
     const onMouseUp = () => {
       if (isMouseDownOnObject) {
         raycaster.setFromCamera(mouse, camera);
+        // Raycast against EVERYTHING to debug
+        const allIntersects = raycaster.intersectObjects(scene.children, true);
+        if (allIntersects.length > 0) {
+           console.log("Global Click Debug: Hit", allIntersects[0].object.name, "Parent:", allIntersects[0].object.parent?.name);
+        }
+
         const intersects = raycaster.intersectObjects(interactableObjects);
-        
         if (intersects.length > 0) {
           console.log("3D Click detected on:", intersects[0].object.name);
-          // Trigger navigation
-          if (playButtonRef.current) {
-             console.log("Clicking hidden button...");
-             playButtonRef.current.click(); 
-          } else {
-             console.error("playButtonRef.current is null!");
+          const path = intersects[0].object.userData.gamePath;
+          if (path && onGameClick) {
+             console.log("Navigating to:", path);
+             onGameClick(path);
           }
         }
       }
@@ -251,17 +269,18 @@ const Scene3D = ({ playButtonRef, setDebugName }) => {
 
 export default function Spawn() {
   const navigate = useNavigate();
-  const playButtonRef = React.useRef(null);
   const [showGuestModal, setShowGuestModal] = React.useState(false);
+  const [pendingPath, setPendingPath] = React.useState(null);
 
-  const handlePlayClick = () => {
-    console.log("handlePlayClick triggered");
+  const handleGameClick = (path) => {
+    console.log("handleGameClick triggered for:", path);
     const token = localStorage.getItem('token');
     if (token) {
-      console.log("Token found, navigating to quiz");
-      navigate('/quiz-click-trap');
+      console.log("Token found, navigating to", path);
+      navigate(path);
     } else {
-      console.log("No token, showing guest modal");
+      console.log("No token, showing guest modal for", path);
+      setPendingPath(path);
       setShowGuestModal(true);
     }
   };
@@ -270,7 +289,7 @@ export default function Spawn() {
   return (
     <>
       <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
-      <Scene3D playButtonRef={playButtonRef} setDebugName={setDebugName} />
+      <Scene3D onGameClick={handleGameClick} setDebugName={setDebugName} />
       
       {/* UI Overlay */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
@@ -278,11 +297,7 @@ export default function Spawn() {
 
         {/* Hidden Logic Button (triggered by 3D click) */}
 
-        <button 
-          ref={playButtonRef}
-          onClick={handlePlayClick} 
-          style={{ display: 'none' }}
-        />
+
 
         {/* Guest Warning Modal */}
         {showGuestModal && (
@@ -295,14 +310,14 @@ export default function Spawn() {
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                 <button 
-                  onClick={() => navigate('/login', { state: { from: '/quiz-click-trap' } })}
+                  onClick={() => navigate('/login', { state: { from: pendingPath } })}
                   className="btn"
                   style={{ background: '#3b82f6' }}
                 >
                   <LogIn size={18} style={{ marginRight: '8px' }} /> Se connecter
                 </button>
                 <button 
-                  onClick={() => navigate('/quiz-click-trap')}
+                  onClick={() => navigate(pendingPath)}
                   className="btn"
                   style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)' }}
                 >
