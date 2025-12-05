@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import './index.css';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
+import { useNavigate } from 'react-router-dom';
+import { Gamepad2, LogIn } from 'lucide-react';
 
-const Scene3D = () => {
+const Scene3D = ({ playButtonRef, setDebugName }) => {
   const clock = new THREE.Clock();
   let mixer = null;
   useEffect(() => {
@@ -19,6 +18,14 @@ const Scene3D = () => {
       side: THREE.BackSide
     });
     const skyMesh = new THREE.Mesh(skyGeometry, skyMaterial);
+
+    // Raycaster setup
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const interactableObjects = []; // Store objects we want to interact with
+    let hoveredObject = null;
+    let isMouseDownOnObject = false;
+
 
     skyMesh.rotation.y = Math.PI / 4;
     skyMesh.rotation.x = Math.PI / 2.5;
@@ -72,6 +79,19 @@ const Scene3D = () => {
       maisonRight.scale.set(3, 3, 3);
       maisonRight.position.set(1.6, 0, -6);
       maisonRight.rotation.y = Math.PI / 2;
+      
+      // Make it interactable
+      maisonRight.traverse((child) => {
+        if (child.isMesh) {
+          // Only add the door meshes
+          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
+             console.log("Adding interactable object:", child.name);
+             child.userData.parentGroup = maisonRight; // Link back to parent
+             interactableObjects.push(child);
+          }
+        }
+      });
+      
       scene.add(maisonRight);
     }, undefined, error => console.error('Erreur maison droite :', error));
 
@@ -129,53 +149,6 @@ const Scene3D = () => {
       action.play();
     }, undefined, error => console.error('Erreur maxwell le chat :', error));
 
-    const fontLoader = new FontLoader();
-
-    const createText = (txt, font, size = 0.5) => {
-      const geometry = new TextGeometry(txt, {
-        font: font,
-        size: size,
-        height: 0.1,
-        curveSegments: 8,
-        bevelEnabled: false
-      });
-
-      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
-
-      return mesh;
-    };
-
-    fontLoader.load("/fonts/helvetiker_regular.typeface.json", font => {
-
-      // --- Texte devant la maison derrière ---
-      const textBack = createText("Quiz 1", font);
-      textBack.position.set(-2, 1.8, 4.3);
-      textBack.rotation.y = Math.PI;
-      scene.add(textBack);
-
-      // --- Texte devant la maison gauche ---
-      const textLeft = createText("Quiz 2", font);
-      textLeft.position.set(-4, 1.8, -1.7);
-      textLeft.rotation.y = -Math.PI / 2;
-      scene.add(textLeft);
-
-      // --- Texte devant la maison droite ---
-      const textRight = createText("Quiz 3", font);
-      textRight.position.set(4, 1.8, 1.7);
-      textRight.rotation.y = Math.PI / 2;
-      scene.add(textRight);
-
-      // --- Texte devant le city hall ---
-      const textCity = createText("Grand Quiz", font);
-      textCity.position.set(2, 1.8, -5);
-      textCity.rotation.y = Math.PI;
-      scene.add(textCity);
-
-    });
-
     const animate = () => {
       requestAnimationFrame(animate);
       const delta = clock.getDelta();
@@ -183,9 +156,79 @@ const Scene3D = () => {
       skyMesh.position.copy(camera.position);
       controls.update();
       renderer.render(scene, camera);
+
+      // Raycasting
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactableObjects);
+
+      if (intersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+        const object = intersects[0].object;
+        
+        // Highlight logic
+        if (hoveredObject !== object) {
+          // Reset previous highlight
+          if (hoveredObject && hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          
+          // Apply new highlight
+          hoveredObject = object;
+          if (hoveredObject.material) {
+            hoveredObject.currentHex = hoveredObject.material.emissive.getHex();
+            hoveredObject.material.emissive.setHex(0x555555); // Grayish glow
+          }
+        }
+      } else {
+        document.body.style.cursor = 'default';
+        if (hoveredObject) {
+          if (hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          hoveredObject = null;
+        }
+      }
     };
 
     animate();
+
+    const onMouseMove = (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    };
+
+    const onMouseDown = () => {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactableObjects);
+      if (intersects.length > 0) {
+        isMouseDownOnObject = true;
+      } else {
+        isMouseDownOnObject = false;
+      }
+    };
+
+    const onMouseUp = () => {
+      if (isMouseDownOnObject) {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(interactableObjects);
+        
+        if (intersects.length > 0) {
+          console.log("3D Click detected on:", intersects[0].object.name);
+          // Trigger navigation
+          if (playButtonRef.current) {
+             console.log("Clicking hidden button...");
+             playButtonRef.current.click(); 
+          } else {
+             console.error("playButtonRef.current is null!");
+          }
+        }
+      }
+      isMouseDownOnObject = false;
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -196,6 +239,9 @@ const Scene3D = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       renderer.dispose();
     };
   }, []);
@@ -203,4 +249,76 @@ const Scene3D = () => {
   return null;
 };
 
-export default Scene3D;
+export default function Spawn() {
+  const navigate = useNavigate();
+  const playButtonRef = React.useRef(null);
+  const [showGuestModal, setShowGuestModal] = React.useState(false);
+
+  const handlePlayClick = () => {
+    console.log("handlePlayClick triggered");
+    const token = localStorage.getItem('token');
+    if (token) {
+      console.log("Token found, navigating to quiz");
+      navigate('/quiz-click-trap');
+    } else {
+      console.log("No token, showing guest modal");
+      setShowGuestModal(true);
+    }
+  };
+  const [debugName, setDebugName] = React.useState("");
+
+  return (
+    <>
+      <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
+      <Scene3D playButtonRef={playButtonRef} setDebugName={setDebugName} />
+      
+      {/* UI Overlay */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
+
+
+        {/* Hidden Logic Button (triggered by 3D click) */}
+
+        <button 
+          ref={playButtonRef}
+          onClick={handlePlayClick} 
+          style={{ display: 'none' }}
+        />
+
+        {/* Guest Warning Modal */}
+        {showGuestModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', pointerEvents: 'auto' }}>
+            <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', textAlign: 'center', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}>
+              <h2 style={{ color: 'white', marginBottom: '1rem' }}>Mode Invité</h2>
+              <p style={{ color: '#ccc', marginBottom: '2rem' }}>
+                Vous n'êtes pas connecté. Votre score ne sera pas enregistré.
+                Voulez-vous continuer ou vous connecter ?
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={() => navigate('/login', { state: { from: '/quiz-click-trap' } })}
+                  className="btn"
+                  style={{ background: '#3b82f6' }}
+                >
+                  <LogIn size={18} style={{ marginRight: '8px' }} /> Se connecter
+                </button>
+                <button 
+                  onClick={() => navigate('/quiz-click-trap')}
+                  className="btn"
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  <Gamepad2 size={18} style={{ marginRight: '8px' }} /> Jouer sans sauvegarder
+                </button>
+              </div>
+              <button 
+                onClick={() => setShowGuestModal(false)}
+                style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
