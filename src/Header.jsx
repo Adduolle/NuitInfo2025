@@ -52,7 +52,7 @@ export default function Header() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }} onClick={() => navigate('/')}>
         <Sparkles size={24} color="var(--primary)" />
         <h1 style={{ fontSize: '1.5rem', margin: 0, background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          GifLogin
+          Goofy Ahh Website
         </h1>
       </div>
 

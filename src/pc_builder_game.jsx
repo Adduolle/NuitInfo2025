@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import Header from "./Header";
 
 // PC Builder Game — Single-file React component (Tailwind CSS assumed available)
 // Default export a React component
@@ -249,6 +250,8 @@ export default function PCBuilderGame() {
   };
 
   return (
+    <>
+    <Header />
     <div className="max-w-5xl mx-auto p-6 min-h-screen text-gray-200">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Construire son propre PC - Jeu pédagogique</h1>
@@ -412,5 +415,6 @@ export default function PCBuilderGame() {
 
       <footer className="mt-8 text-sm text-gray-600">Made for pedagogical use</footer>
     </div>
+    </>
   );
 }
