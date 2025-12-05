@@ -60,14 +60,13 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maisonBack.position.set(-6, 0, 15);
       maisonBack.rotation.y = Math.PI;
 
-      // Make it interactable (Contact)
       maisonBack.traverse((child) => {
         if (child.isMesh) {
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
-             console.log("Adding interactable object (Inclusion):", child.name);
-             child.userData.parentGroup = maisonBack;
-             child.userData.gamePath = '/inclusion';
-             interactableObjects.push(child);
+            console.log("Adding interactable object (Inclusion):", child.name);
+            child.userData.parentGroup = maisonBack;
+            child.userData.gamePath = '/inclusion';
+            interactableObjects.push(child);
           }
         }
       });
@@ -157,14 +156,13 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maxwell.scale.set(3, 3, 3);
       maxwell.position.set(-2, 1.2, -3);
       maxwell.rotation.y = Math.PI / 2;
-      
-      // Make Maxwell interactable (Contact)
+
       maxwell.traverse((child) => {
         if (child.isMesh) {
-           console.log("Adding interactable object (Maxwell -> Contact):", child.name);
-           child.userData.parentGroup = maxwell;
-           child.userData.gamePath = '/contact';
-           interactableObjects.push(child);
+          console.log("Adding interactable object (Maxwell -> Contact):", child.name);
+          child.userData.parentGroup = maxwell;
+          child.userData.gamePath = '/contact';
+          interactableObjects.push(child);
         }
       });
 
@@ -174,27 +172,41 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       action.play();
     }, undefined, error => console.error('Erreur maxwell le chat :', error));
 
-    // Alan Turing Bust
     loader.load('/modeles/Alan Turing bust.glb', gltf => {
       const turing = gltf.scene;
       turing.scale.set(3, 3, 3);
-      turing.position.set(-3, 2, -5.5); // Further back and slightly left
-      turing.rotation.y = Math.PI / 6; // Face more towards the front
-      
-      // Make Turing interactable (Profile)
+      turing.position.set(-3, 2, -5.5);
+      turing.rotation.y = Math.PI / 6;
+
       turing.traverse((child) => {
         if (child.isMesh) {
-           console.log("Adding interactable object (Turing -> Profile):", child.name);
-           child.userData.parentGroup = turing;
-           child.userData.gamePath = '/Profile';
-           interactableObjects.push(child);
+          console.log("Adding interactable object (Turing -> Profile):", child.name);
+          child.userData.parentGroup = turing;
+          child.userData.gamePath = '/Profile';
+          interactableObjects.push(child);
         }
       });
 
       scene.add(turing);
     }, undefined, error => console.error('Erreur Alan Turing :', error));
 
-    // Fonction pour créer du texte plat avec CanvasTexture
+    loader.load('/modeles/sewer.glb', gltf => {
+      const sewerCover = gltf.scene;
+      sewerCover.scale.set(0.035, 0.035, 0.035);
+      sewerCover.position.set(0, 2, 2);
+      sewerCover.rotation.y = 0;
+
+      sewerCover.traverse((child) => {
+        if (child.isMesh) {
+          child.userData.parentGroup = sewerCover;
+          child.userData.gamePath = '/mentions-legales';
+          interactableObjects.push(child);
+        }
+      });
+
+      scene.add(sewerCover);
+    }, undefined, error => console.error('Erreur chargement plaque d\'égout :', error));
+
     const createFlatText = (txt, width = 1, height = 0.3, fontSize = 64, color = 'black') => {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
