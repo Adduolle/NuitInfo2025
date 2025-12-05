@@ -1,10 +1,7 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { useNavigate } from 'react-router-dom';
 import { Gamepad2, LogIn } from 'lucide-react';
 
@@ -206,7 +203,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       texture.needsUpdate = true;
 
       // Matériau et plan
-      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
       const geometry = new THREE.PlaneGeometry(width, height);
       const mesh = new THREE.Mesh(geometry, material);
 
@@ -214,25 +211,27 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
     };
 
     // --- Texte devant les panneaux ---
-    const textBack = createFlatText("Quiz 1", 1, 0.3);
-    textBack.position.set(-2, 3, 4.3);
+    const textBack = createFlatText("Quiz 1", 3, 0.9);
+    textBack.position.set(-2, 3.75, 5);
     textBack.rotation.y = Math.PI;
     textBack.rotation.x = Math.PI;
     scene.add(textBack);
 
-    const textLeft = createFlatText("PC Builder", 1, 0.3);
-    textLeft.position.set(-4, 1.8, -1.7);
+    const textLeft = createFlatText("Quiz 2", 3, 0.9);
+    textLeft.position.set(-4, 3.75, -2.35);
     textLeft.rotation.y = -Math.PI / 2;
+    textLeft.rotation.x = Math.PI;
     scene.add(textLeft);
 
-    const textRight = createFlatText("Quiz 3", 1, 0.3);
-    textRight.position.set(4, 1.8, 1.7);
+    const textRight = createFlatText("École", 3, 0.9);
+    textRight.position.set(4, 3.75, 2.5);
     textRight.rotation.y = Math.PI / 2;
+    textRight.rotation.x = Math.PI;
     scene.add(textRight);
 
-    const textCity = createFlatText("Grand Quiz", 1.2, 0.3);
-    textCity.position.set(2, 1.8, -5);
-    textCity.rotation.y = Math.PI;
+    const textCity = createFlatText("Mairie", 3, 0.9);
+    textCity.position.set(1.75, 3.85, -4);
+    textCity.rotation.x = Math.PI;
     scene.add(textCity);
 
     const animate = () => {
