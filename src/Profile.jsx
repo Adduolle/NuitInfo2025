@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Header from "./Header";
 
 export default function Profile() {
   const [token] = useState(localStorage.getItem("token"));
@@ -71,7 +72,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex justify-center items-start min-h-screen p-8 gap-8">
+    <>
+    <Header />
+    <div className="flex justify-center items-start min-h-screen p-8 gap-8" style={{ paddingTop: "100px" }}>
 
       {/* === Bloc Profil === */}
       <div className="glass-panel animate-fade-in w-[450px] p-8">
@@ -200,5 +203,6 @@ export default function Profile() {
 
       </div>
     </div>
+    </>
   );
 }

@@ -5,7 +5,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
-import { useNavigate } from 'react-router-dom';
 import { Gamepad2, LogIn } from 'lucide-react';
 
 const Scene3D = ({ onGameClick, setDebugName }) => {
@@ -65,19 +64,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maisonBack.position.set(-6, 0, 15);
       maisonBack.rotation.y = Math.PI;
 
-      // Make it interactable (Contact)
-      maisonBack.traverse((child) => {
-        if (child.isMesh) {
-          // Only add the door meshes
-          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
-             console.log("Adding interactable object (Contact):", child.name);
-             child.userData.parentGroup = maisonBack;
-             child.userData.gamePath = '/contact'; // Set path
-             interactableObjects.push(child);
-          }
-        }
-      });
-
+      maisonBack.rotation.y = Math.PI;
       scene.add(maisonBack);
     }, undefined, error => console.error('Erreur maison derrière :', error));
 
@@ -177,12 +164,42 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maxwell.scale.set(3, 3, 3);
       maxwell.position.set(-2, 1.2, -3);
       maxwell.rotation.y = Math.PI / 2;
+      
+      // Make Maxwell interactable (Contact)
+      maxwell.traverse((child) => {
+        if (child.isMesh) {
+           console.log("Adding interactable object (Maxwell -> Contact):", child.name);
+           child.userData.parentGroup = maxwell;
+           child.userData.gamePath = '/contact';
+           interactableObjects.push(child);
+        }
+      });
+
       scene.add(maxwell);
       mixer = new THREE.AnimationMixer(maxwell);
       const action = mixer.clipAction(gltf.animations[0]);
       action.play();
-      action.play();
     }, undefined, error => console.error('Erreur maxwell le chat :', error));
+
+    // Alan Turing Bust
+    loader.load('/modeles/Alan Turing bust.glb', gltf => {
+      const turing = gltf.scene;
+      turing.scale.set(3, 3, 3);
+      turing.position.set(-3, 2, -5.5); // Further back and slightly left
+      turing.rotation.y = Math.PI / 6; // Face more towards the front
+      
+      // Make Turing interactable (Profile)
+      turing.traverse((child) => {
+        if (child.isMesh) {
+           console.log("Adding interactable object (Turing -> Profile):", child.name);
+           child.userData.parentGroup = turing;
+           child.userData.gamePath = '/Profile';
+           interactableObjects.push(child);
+        }
+      });
+
+      scene.add(turing);
+    }, undefined, error => console.error('Erreur Alan Turing :', error));
 
     // Fonction pour créer du texte plat avec CanvasTexture
     const createFlatText = (txt, width = 1, height = 0.3, fontSize = 64, color = 'black') => {
@@ -202,7 +219,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
       // Créer la texture
       const texture = new THREE.CanvasTexture(canvas);
-      texture.flipY = false;
+      texture.flipY = true;
       texture.needsUpdate = true;
 
       // Matériau et plan
@@ -214,10 +231,20 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
     };
 
     // --- Texte devant les panneaux ---
-    const textBack = createFlatText("Contact", 1, 0.3);
-    textBack.position.set(-2, 3, 4.3);
+    const textBack = createFlatText("Mini Jeu", 2, 0.5, 100);
+    textBack.position.set(-2, 3.3, 4.9); // Higher
     textBack.rotation.y = Math.PI;
     scene.add(textBack);
+
+    const textContact = createFlatText("Contact", 1, 0.3);
+    textContact.position.set(-2, 2.5, -3); // Positioned above Maxwell
+    textContact.rotation.y = Math.PI / 2; 
+    scene.add(textContact);
+
+    const textProfile = createFlatText("Profil", 1, 0.3);
+    textProfile.position.set(-3, 3.5, -5.5); // Positioned above Turing
+    textProfile.rotation.y = Math.PI / 6; 
+    scene.add(textProfile);
 
     const textLeft = createFlatText("PC Builder", 1, 0.3);
     textLeft.position.set(-4, 1.8, -1.7);
