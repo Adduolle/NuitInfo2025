@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 
 const Scene3D = ({ onGameClick, setDebugName }) => {
   const clock = new THREE.Clock();
@@ -76,10 +75,10 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
         if (child.isMesh) {
           // Only add the door meshes
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
-             console.log("Adding interactable object (PC Builder):", child.name);
-             child.userData.parentGroup = maisonLeft;
-             child.userData.gamePath = '/pc-builder-game'; // Set path
-             interactableObjects.push(child);
+            console.log("Adding interactable object (PC Builder):", child.name);
+            child.userData.parentGroup = maisonLeft;
+            child.userData.gamePath = '/pc-builder-game'; // Set path
+            interactableObjects.push(child);
           }
         }
       });
@@ -93,20 +92,20 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maisonRight.scale.set(3, 3, 3);
       maisonRight.position.set(1.6, 0, -6);
       maisonRight.rotation.y = Math.PI / 2;
-      
+
       // Make it interactable
       maisonRight.traverse((child) => {
         if (child.isMesh) {
           // Only add the door meshes
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
-             console.log("Adding interactable object:", child.name);
-             child.userData.parentGroup = maisonRight; // Link back to parent
-             child.userData.gamePath = '/quiz-click-trap'; // Set path
-             interactableObjects.push(child);
+            console.log("Adding interactable object:", child.name);
+            child.userData.parentGroup = maisonRight; // Link back to parent
+            child.userData.gamePath = '/quiz-click-trap'; // Set path
+            interactableObjects.push(child);
           }
         }
       });
-      
+
       scene.add(maisonRight);
     }, undefined, error => console.error('Erreur maison droite :', error));
 
@@ -164,52 +163,56 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       action.play();
     }, undefined, error => console.error('Erreur maxwell le chat :', error));
 
-    const fontLoader = new FontLoader();
+    // Fonction pour créer du texte plat avec CanvasTexture
+    const createFlatText = (txt, width = 1, height = 0.3, fontSize = 64, color = 'black') => {
+      // Créer le canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
 
-    const createText = (txt, font, size = 0.5) => {
-      const geometry = new TextGeometry(txt, {
-        font: font,
-        size: size,
-        height: 0.1,
-        curveSegments: 8,
-        bevelEnabled: false
-      });
+      // Dessiner le texte
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(txt, canvas.width / 2, canvas.height / 2);
 
-      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      // Créer la texture
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.flipY = false;
+      texture.needsUpdate = true;
+
+      // Matériau et plan
+      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const geometry = new THREE.PlaneGeometry(width, height);
       const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
 
       return mesh;
     };
 
-    fontLoader.load("/fonts/helvetiker_regular.typeface.json", font => {
+    // --- Texte devant les panneaux ---
+    const textBack = createFlatText("Quiz 1", 1, 0.3);
+    textBack.position.set(-2, 3, 4.3);
+    textBack.rotation.y = Math.PI;
+    scene.add(textBack);
 
-      // --- Texte devant la maison derrière ---
-      const textBack = createText("Quiz 1", font);
-      textBack.position.set(-2, 1.8, 4.3);
-      textBack.rotation.y = Math.PI;
-      scene.add(textBack);
+    const textLeft = createFlatText("Quiz 2", 1, 0.3);
+    textLeft.position.set(-4, 1.8, -1.7);
+    textLeft.rotation.y = -Math.PI / 2;
+    scene.add(textLeft);
 
-      // --- Texte devant la maison gauche ---
-      const textLeft = createText("Quiz 2", font);
-      textLeft.position.set(-4, 1.8, -1.7);
-      textLeft.rotation.y = -Math.PI / 2;
-      scene.add(textLeft);
+    const textRight = createFlatText("Quiz 3", 1, 0.3);
+    textRight.position.set(4, 1.8, 1.7);
+    textRight.rotation.y = Math.PI / 2;
+    scene.add(textRight);
 
-      // --- Texte devant la maison droite ---
-      const textRight = createText("Quiz 3", font);
-      textRight.position.set(4, 1.8, 1.7);
-      textRight.rotation.y = Math.PI / 2;
-      scene.add(textRight);
+    const textCity = createFlatText("Grand Quiz", 1.2, 0.3);
+    textCity.position.set(2, 1.8, -5);
+    textCity.rotation.y = Math.PI;
+    scene.add(textCity);
 
-      // --- Texte devant le city hall ---
-      const textCity = createText("Grand Quiz", font);
-      textCity.position.set(2, 1.8, -5);
-      textCity.rotation.y = Math.PI;
-      scene.add(textCity);
-
-    });
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -226,14 +229,14 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       if (intersects.length > 0) {
         document.body.style.cursor = 'pointer';
         const object = intersects[0].object;
-        
+
         // Highlight logic
         if (hoveredObject !== object) {
           // Reset previous highlight
           if (hoveredObject && hoveredObject.material) {
-             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+            hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
           }
-          
+
           // Apply new highlight
           hoveredObject = object;
           if (hoveredObject.material) {
@@ -245,7 +248,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
         document.body.style.cursor = 'default';
         if (hoveredObject) {
           if (hoveredObject.material) {
-             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+            hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
           }
           hoveredObject = null;
         }
@@ -275,7 +278,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
         // Raycast against EVERYTHING to debug
         const allIntersects = raycaster.intersectObjects(scene.children, true);
         if (allIntersects.length > 0) {
-           console.log("Global Click Debug: Hit", allIntersects[0].object.name, "Parent:", allIntersects[0].object.parent?.name);
+          console.log("Global Click Debug: Hit", allIntersects[0].object.name, "Parent:", allIntersects[0].object.parent?.name);
         }
 
         const intersects = raycaster.intersectObjects(interactableObjects);
@@ -283,8 +286,8 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
           console.log("3D Click detected on:", intersects[0].object.name);
           const path = intersects[0].object.userData.gamePath;
           if (path && onGameClick) {
-             console.log("Navigating to:", path);
-             onGameClick(path);
+            console.log("Navigating to:", path);
+            onGameClick(path);
           }
         }
       }
@@ -337,7 +340,7 @@ export default function Spawn() {
     <>
       <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
       <Scene3D onGameClick={handleGameClick} setDebugName={setDebugName} />
-      
+
       {/* UI Overlay */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
 
@@ -356,14 +359,14 @@ export default function Spawn() {
                 Voulez-vous continuer ou vous connecter ?
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button 
+                <button
                   onClick={() => navigate('/login', { state: { from: pendingPath } })}
                   className="btn"
                   style={{ background: '#3b82f6' }}
                 >
                   <LogIn size={18} style={{ marginRight: '8px' }} /> Se connecter
                 </button>
-                <button 
+                <button
                   onClick={() => navigate(pendingPath)}
                   className="btn"
                   style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)' }}
@@ -371,7 +374,7 @@ export default function Spawn() {
                   <Gamepad2 size={18} style={{ marginRight: '8px' }} /> Jouer sans sauvegarder
                 </button>
               </div>
-              <button 
+              <button
                 onClick={() => setShowGuestModal(false)}
                 style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
               >
