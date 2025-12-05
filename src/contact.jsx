@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Header from "./Header";
 import "./index.css";
 import "./css/Explosion.css";
 
@@ -141,7 +142,9 @@ export default function Contact() {
   };
 
   return (
-    <div className={`contact-container ${fieldEffect.subject} ${fieldEffect.message}`} style={{ width: "500px", margin: "0 auto", padding: "2rem" }}>
+    <>
+    <Header />
+    <div className={`contact-container ${fieldEffect.subject} ${fieldEffect.message}`} style={{ width: "500px", margin: "0 auto", padding: "2rem", paddingTop: "100px" }}>
       <h1>Contactez-nous</h1>
       <form onSubmit={handleSubmit} className="contact-form" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         <input
@@ -333,6 +336,7 @@ export default function Contact() {
         </div>
     </footer>
     </div>
+    </>
   );
 }
 
