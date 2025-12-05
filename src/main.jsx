@@ -6,6 +6,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const Scene3D = () => {
+  const clock = new THREE.Clock();
+  let mixer = null;
   useEffect(() => {
     const scene = new THREE.Scene();
     const skyGeometry = new THREE.SphereGeometry(100, 128, 128);
@@ -46,7 +48,7 @@ const Scene3D = () => {
     const loader = new GLTFLoader();
 
     // Maison derrière la caméra (face caméra = 180°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonBack = gltf.scene;
       maisonBack.scale.set(3, 3, 3);
       maisonBack.position.set(-6, 0, 15);
@@ -55,7 +57,7 @@ const Scene3D = () => {
     }, undefined, error => console.error('Erreur maison derrière :', error));
 
     // Maison à gauche de la caméra (tournée -90°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonLeft = gltf.scene;
       maisonLeft.scale.set(3, 3, 3);
       maisonLeft.position.set(-1.6, 0, 6);
@@ -64,7 +66,7 @@ const Scene3D = () => {
     }, undefined, error => console.error('Erreur maison gauche :', error));
 
     // Maison à droite de la caméra (tournée 90°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonRight = gltf.scene;
       maisonRight.scale.set(3, 3, 3);
       maisonRight.position.set(1.6, 0, -6);
@@ -114,8 +116,22 @@ const Scene3D = () => {
       scene.add(signCity);
     }, undefined, error => console.error('Erreur panneau city hall :', error));
 
+    // Maxwell the cat
+    loader.load('/modeles/maxwell.glb', gltf => {
+      const maxwell = gltf.scene;
+      maxwell.scale.set(3, 3, 3);
+      maxwell.position.set(-2, 1.2, -3);
+      maxwell.rotation.y = Math.PI / 2;
+      scene.add(maxwell);
+      mixer = new THREE.AnimationMixer(maxwell);
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.play();
+    }, undefined, error => console.error('Erreur maxwell le chat :', error));
+
     const animate = () => {
       requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
       skyMesh.position.copy(camera.position);
       controls.update();
       renderer.render(scene, camera);
@@ -153,3 +169,4 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>
 );
+
