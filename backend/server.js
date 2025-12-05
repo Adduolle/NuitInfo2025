@@ -19,6 +19,7 @@ mongoose
 const User = mongoose.model("User", {
   password: String,
   gifUrl: { type: String, unique: true },
+  
 });
 
 // REGISTER
