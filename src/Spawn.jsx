@@ -194,8 +194,9 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
     // --- Texte devant les panneaux ---
     const textBack = createFlatText("Quiz 1", 1, 0.3);
-    textBack.position.set(-2, 3, 4.3);
+    textBack.position.set(0, 3, 0);
     textBack.rotation.y = Math.PI;
+    textBack.rotation.x = Math.PI;
     scene.add(textBack);
 
     const textLeft = createFlatText("Quiz 2", 1, 0.3);
