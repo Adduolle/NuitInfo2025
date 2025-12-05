@@ -219,24 +219,14 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       return mesh;
     };
 
-    const textBack = createFlatText("Inclusion", 3, 0.9);
+    const textBack = createFlatText("Bureau", 3, 0.9);
     textBack.position.set(-2, 3.75, 5);
     textBack.rotation.y = Math.PI;
     scene.add(textBack);
 
-    const textContact = createFlatText("Contact", 1, 0.3);
-    textContact.position.set(-2, 2.5, -3); // Positioned above Maxwell
-    textContact.rotation.y = Math.PI / 2; 
-    scene.add(textContact);
-
-    const textProfile = createFlatText("Profil", 1, 0.3);
-    textProfile.position.set(-3, 3.5, -5.5); // Positioned above Turing
-    textProfile.rotation.y = Math.PI / 6; 
-    scene.add(textProfile);
-
-    const textLeft = createFlatText("PC Builder", 1, 0.3);
-    textLeft.position.set(-4, 1.8, -1.7);
-    textLeft.rotation.y = -Math.PI / 2;
+    const textLeft = createFlatText("Magasin", 3, 0.9);
+    textLeft.position.set(-4, 3.75, -2.35);
+    textLeft.rotation.y = Math.PI / 2;
     scene.add(textLeft);
 
     const textRight = createFlatText("École", 3, 0.9);
@@ -246,7 +236,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
     const textCity = createFlatText("Mairie", 3, 0.9);
     textCity.position.set(1.75, 3.85, -4);
-    // textCity.rotation.x = Math.PI; // Removed to fix orientation
     scene.add(textCity);
 
     const animate = () => {
