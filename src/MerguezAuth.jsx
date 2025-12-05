@@ -1,9 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 export default function MerguezAuth({ onUpdate }) {
-  const [times, setTimes] = useState([0, 0, 0, 0, 0]);
+  const [count, setCount] = useState(5);
+  const [times, setTimes] = useState(Array(5).fill(0));
   const [isVeggie, setIsVeggie] = useState(false);
   
+  // Update times array when count changes
+  useEffect(() => {
+    setTimes(prev => {
+      if (prev.length === count) return prev;
+      const newTimes = Array(count).fill(0);
+      // Preserve existing times if possible
+      for(let i=0; i<Math.min(prev.length, count); i++) newTimes[i] = prev[i];
+      return newTimes;
+    });
+  }, [count]);
+
   // Notify parent whenever times change
   useEffect(() => {
     onUpdate(times);
@@ -11,17 +23,32 @@ export default function MerguezAuth({ onUpdate }) {
 
   return (
     <div style={{ width: '100%', padding: '1rem', background: '#222', borderRadius: '12px', color: '#eee' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 style={{ margin: 0, fontSize: '1rem', color: isVeggie ? '#FF9999' : '#ff7a4d' }}>
-          {isVeggie ? '🐟 Salmon Grill' : '🌭 Merguez Party'}
-        </h3>
-        <button 
-          type="button"
-          onClick={() => setIsVeggie(!isVeggie)}
-          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-        >
-          {isVeggie ? 'Switch to Merguez' : 'Switch to Salmon'}
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: isVeggie ? '#FF9999' : '#ff7a4d' }}>
+            {isVeggie ? '🐟 Salmon Grill' : '🌭 Merguez Party'}
+          </h3>
+          <button 
+            type="button"
+            onClick={() => setIsVeggie(!isVeggie)}
+            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+          >
+            {isVeggie ? 'Switch to Merguez' : 'Switch to Salmon'}
+          </button>
+        </div>
+
+        {/* SLIDER CONTROL */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px' }}>
+          <span style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Count: {count}</span>
+          <input 
+            type="range" 
+            min="5" 
+            max="50" 
+            value={count} 
+            onChange={(e) => setCount(parseInt(e.target.value))}
+            style={{ width: '100%', accentColor: isVeggie ? '#FF9999' : '#ff7a4d' }}
+          />
+        </div>
       </div>
 
       <div id="barbecue" style={{
@@ -32,29 +59,36 @@ export default function MerguezAuth({ onUpdate }) {
         background: 'linear-gradient(180deg,#0f0f0f 0,#161616 100%)',
         boxShadow: 'inset 0 6px 20px rgba(0,0,0,.7)',
         padding: '20px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: '1rem'
+        marginBottom: '1rem',
+        overflowX: 'auto', // Scroll container
+        overflowY: 'hidden'
       }}>
-        <div className="rails" style={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', padding: '20px 0', zIndex: 1
-        }}>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="rail" style={{
-              height: '6px', borderRadius: '999px', background: 'linear-gradient(90deg,#555,#777,#555)', boxShadow: '0 2px 8px rgba(0,0,0,.6) inset', margin: '0 20px'
-            }} />
-          ))}
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', zIndex: 2, height: '100%' }}>
-          {times.map((time, index) => (
-            <Merguez key={index} id={index} isVeggie={isVeggie} onStop={(t) => {
-              const newTimes = [...times];
-              newTimes[index] = t;
-              setTimes(newTimes);
-            }} />
-          ))}
+        {/* Inner wrapper that grows with content */}
+        <div style={{ position: 'relative', minWidth: 'max-content', height: '100%', padding: '0 20px' }}>
+          
+          {/* Rails - Absolute to the inner wrapper */}
+          <div className="rails" style={{
+            position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', padding: '20px 0', zIndex: 1
+          }}>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="rail" style={{
+                height: '6px', borderRadius: '999px', background: 'linear-gradient(90deg,#555,#777,#555)', boxShadow: '0 2px 8px rgba(0,0,0,.6) inset', margin: '0'
+              }} />
+            ))}
+          </div>
+          
+          {/* Items - On top of rails */}
+          <div style={{ display: 'flex', gap: '10px', position: 'relative', zIndex: 2, height: '100%' }}>
+            {times.map((time, index) => (
+              <Merguez key={index} id={index} isVeggie={isVeggie} onStop={(t) => {
+                setTimes(prev => {
+                  const newTimes = [...prev];
+                  newTimes[index] = t;
+                  return newTimes;
+                });
+              }} />
+            ))}
+          </div>
         </div>
       </div>
       
@@ -140,7 +174,7 @@ function Merguez({ id, onStop, isVeggie }) {
   const color = `rgb(${r},${g},${b})`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'space-between', flexShrink: 0 }}>
       <div style={{
         width: isVeggie ? '45px' : '26px', // Merguez slightly thinner
         height: isVeggie ? '80%' : '130%', // Merguez EVEN LONGER
