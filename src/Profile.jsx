@@ -14,18 +14,13 @@ export default function Profile() {
     passions: [],
   });
 const [radarCategory, setRadarCategory] = useState(null);
-// --- Crée les données pour le radar combiné ---
     const getRadarDataMultiple = () => {
     const categories = ["skills", "softSkills", "projets", "passions"];
     const allItemsSet = new Set();
     
-
-  // On récupère tous les éléments uniques de toutes les catégories
   categories.forEach(cat => userData[cat].forEach(item => allItemsSet.add(item)));
 
   const allItems = Array.from(allItemsSet);
-
-  // On crée les données pour le radar
   return allItems.map(item => {
     const entry = { skill: item };
     categories.forEach(cat => {
