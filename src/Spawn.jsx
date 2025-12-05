@@ -369,9 +369,7 @@ export default function Spawn() {
 
   return (
     <>
-      <div style={{ position: 'fixed', top: '100px', left: '10px', color: 'white', zIndex: 9999, background: 'black' }}>
-        DEBUG: Spawn Loaded. Check Console.
-      </div>
+
       <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
       <Scene3D onGameClick={handleGameClick} setDebugName={setDebugName} />
 
