@@ -64,9 +64,9 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       maisonBack.traverse((child) => {
         if (child.isMesh) {
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
-             console.log("Adding interactable object (Contact):", child.name);
+             console.log("Adding interactable object (Inclusion):", child.name);
              child.userData.parentGroup = maisonBack;
-             child.userData.gamePath = '/contact';
+             child.userData.gamePath = '/inclusion';
              interactableObjects.push(child);
           }
         }
@@ -219,7 +219,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       return mesh;
     };
 
-    const textBack = createFlatText("Bureau", 3, 0.9);
+    const textBack = createFlatText("Inclusion", 3, 0.9);
     textBack.position.set(-2, 3.75, 5);
     textBack.rotation.y = Math.PI;
     scene.add(textBack);
@@ -241,7 +241,7 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
     const textRight = createFlatText("École", 3, 0.9);
     textRight.position.set(4, 3.75, 2.5);
-    textRight.rotation.y = Math.PI / 2;
+    textRight.rotation.y = -Math.PI / 2;
     scene.add(textRight);
 
     const textCity = createFlatText("Mairie", 3, 0.9);

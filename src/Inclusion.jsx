@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Header from "./Header";
 import "./css/InclusionGame.css";
 
 export default function Inclusion() {
@@ -63,7 +64,9 @@ export default function Inclusion() {
   };
 
   return (
-    <div className="inclusion-container">
+    <>
+    <Header />
+    <div className="inclusion-container" style={{ paddingTop: "100px" }}>
       <h1>Inclusion Numérique & Citoyenne</h1>
 
       <p className="intro">
@@ -108,5 +111,6 @@ export default function Inclusion() {
         </div>
       )}
     </div>
+    </>
   );
 }

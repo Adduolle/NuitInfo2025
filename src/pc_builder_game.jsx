@@ -237,6 +237,36 @@ export default function PCBuilderGame() {
       totalPrice,
       missingEssentials,
     };
+    
+    saveScore(totalScore);
+  };
+
+  const saveScore = async (finalScore) => {
+    if (isGuest) return; // Don't save for guests
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:3001/score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          gameId: 'pcbuilder',
+          score: finalScore
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success && data.bestScore) {
+        setBestScore(data.bestScore);
+      }
+    } catch (error) {
+      console.error('Error saving score:', error);
+    }
   };
 
   const result = useMemo(() => computeResult(), [selected, orderedSteps, objective]);
@@ -252,7 +282,7 @@ export default function PCBuilderGame() {
   return (
     <>
     <Header />
-    <div className="max-w-5xl mx-auto p-6 min-h-screen text-gray-200">
+    <div className="max-w-5xl mx-auto p-6 min-h-screen text-gray-200 pt-[80px]">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Construire son propre PC - Jeu pédagogique</h1>
         <p className="text-sm text-gray-300 mt-1">Objectif tiré : <span className="font-semibold">{objective.title}</span> — {objective.desc}</p>
