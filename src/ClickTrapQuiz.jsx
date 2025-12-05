@@ -55,13 +55,14 @@ export default function ClickTrapQuiz() {
   const [timeLeft, setTimeLeft] = useState(10);
   const [gameState, setGameState] = useState('playing'); // playing, feedback, finished
   const [lastChoiceCorrect, setLastChoiceCorrect] = useState(null);
-  const [bestScore, setBestScore] = useState(0);
+  const [bestScore, setBestScore] = useState(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Auth Check & Fetch Best Score
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login', { state: { from: '/quiz-click-trap' } });
+      setIsGuest(true);
       return;
     }
 
@@ -75,9 +76,8 @@ export default function ClickTrapQuiz() {
         setBestScore(data.scores.clickTrap);
       }
     })
-    .catch(err => console.error("Failed to fetch score:", err));
-
-  }, [navigate]);
+    .catch(err => console.error("Failed to fetch best score", err));
+  }, []); // Removed navigate from dependencies as it's not used for navigation here anymore
 
   // Timer
   useEffect(() => {
@@ -121,6 +121,8 @@ export default function ClickTrapQuiz() {
   };
 
   const saveScore = async (finalScore) => {
+    if (isGuest) return; // Don't save for guests
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -216,18 +218,28 @@ export default function ClickTrapQuiz() {
         {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ margin: 0 }}>Piège à Clics</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: timeLeft < 4 ? 'red' : 'white' }}>
-            <Clock size={20} />
-            <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{timeLeft}s</span>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.1)', padding: '5px 10px', borderRadius: '8px' }}>
-            Score: {score}
-          </div>
-          <div style={{ background: 'rgba(255,215,0,0.2)', padding: '5px 10px', borderRadius: '8px', border: '1px solid gold', color: 'gold' }}>
+        <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2rem',
+        background: 'rgba(0,0,0,0.5)',
+        padding: '1rem',
+        borderRadius: '8px'
+      }}>
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Score: {score}</div>
+        {bestScore !== null && (
+          <div style={{ background: '#ffd700', color: 'black', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '0.9rem' }}>
             Meilleur: {bestScore}
           </div>
-        </div>
+        )}
+        {isGuest && (
+          <div style={{ background: '#666', color: 'white', padding: '5px 10px', borderRadius: '15px', fontWeight: 'bold', fontSize: '0.9rem' }}>
+            Mode Invité
+          </div>
+        )}
+        <div style={{ fontSize: '1.5rem', color: timeLeft < 5 ? '#ff4444' : 'white' }}>⏳ {timeLeft}s</div>
+      </div>
       </div>
 
       {/* Game Area */}

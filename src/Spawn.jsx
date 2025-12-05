@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useNavigate } from 'react-router-dom';
 import { Gamepad2, LogIn } from 'lucide-react';
 
-const Scene3D = ({ playButtonRef }) => {
+const Scene3D = ({ playButtonRef, setDebugName }) => {
   const clock = new THREE.Clock();
   let mixer = null;
   useEffect(() => {
@@ -23,6 +23,9 @@ const Scene3D = ({ playButtonRef }) => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const interactableObjects = []; // Store objects we want to interact with
+    let hoveredObject = null;
+    let isMouseDownOnObject = false;
+
 
     skyMesh.rotation.y = Math.PI / 4;
     skyMesh.rotation.x = Math.PI / 2.5;
@@ -80,8 +83,12 @@ const Scene3D = ({ playButtonRef }) => {
       // Make it interactable
       maisonRight.traverse((child) => {
         if (child.isMesh) {
-          child.userData.parentGroup = maisonRight; // Link back to parent
-          interactableObjects.push(child);
+          // Only add the door meshes
+          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
+             console.log("Adding interactable object:", child.name);
+             child.userData.parentGroup = maisonRight; // Link back to parent
+             interactableObjects.push(child);
+          }
         }
       });
       
@@ -156,16 +163,30 @@ const Scene3D = ({ playButtonRef }) => {
 
       if (intersects.length > 0) {
         document.body.style.cursor = 'pointer';
-        // Highlight effect (optional: scale up slightly or change emission)
         const object = intersects[0].object;
-        // Simple highlight: scale up the parent group slightly
-        if (object.userData.parentGroup) {
-           // We could add a sophisticated highlight here, but for now cursor change is good feedback
-           // object.userData.parentGroup.scale.set(3.1, 3.1, 3.1); 
+        
+        // Highlight logic
+        if (hoveredObject !== object) {
+          // Reset previous highlight
+          if (hoveredObject && hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          
+          // Apply new highlight
+          hoveredObject = object;
+          if (hoveredObject.material) {
+            hoveredObject.currentHex = hoveredObject.material.emissive.getHex();
+            hoveredObject.material.emissive.setHex(0x555555); // Grayish glow
+          }
         }
       } else {
         document.body.style.cursor = 'default';
-        // Reset scale if we were scaling
+        if (hoveredObject) {
+          if (hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          hoveredObject = null;
+        }
       }
     };
 
@@ -176,20 +197,38 @@ const Scene3D = ({ playButtonRef }) => {
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     };
 
-    const onClick = () => {
+    const onMouseDown = () => {
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(interactableObjects);
-      
       if (intersects.length > 0) {
-        // Trigger navigation
-        if (playButtonRef.current) {
-           playButtonRef.current.click(); // Simulate click on the hidden button logic
-        }
+        isMouseDownOnObject = true;
+      } else {
+        isMouseDownOnObject = false;
       }
     };
 
+    const onMouseUp = () => {
+      if (isMouseDownOnObject) {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(interactableObjects);
+        
+        if (intersects.length > 0) {
+          console.log("3D Click detected on:", intersects[0].object.name);
+          // Trigger navigation
+          if (playButtonRef.current) {
+             console.log("Clicking hidden button...");
+             playButtonRef.current.click(); 
+          } else {
+             console.error("playButtonRef.current is null!");
+          }
+        }
+      }
+      isMouseDownOnObject = false;
+    };
+
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('click', onClick);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -201,7 +240,8 @@ const Scene3D = ({ playButtonRef }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('click', onClick);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       renderer.dispose();
     };
   }, []);
@@ -212,11 +252,25 @@ const Scene3D = ({ playButtonRef }) => {
 export default function Spawn() {
   const navigate = useNavigate();
   const playButtonRef = React.useRef(null);
+  const [showGuestModal, setShowGuestModal] = React.useState(false);
+
+  const handlePlayClick = () => {
+    console.log("handlePlayClick triggered");
+    const token = localStorage.getItem('token');
+    if (token) {
+      console.log("Token found, navigating to quiz");
+      navigate('/quiz-click-trap');
+    } else {
+      console.log("No token, showing guest modal");
+      setShowGuestModal(true);
+    }
+  };
+  const [debugName, setDebugName] = React.useState("");
 
   return (
     <>
       <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
-      <Scene3D playButtonRef={playButtonRef} />
+      <Scene3D playButtonRef={playButtonRef} setDebugName={setDebugName} />
       
       {/* UI Overlay */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
@@ -231,18 +285,47 @@ export default function Spawn() {
         </div>
 
         {/* Hidden Logic Button (triggered by 3D click) */}
+
         <button 
           ref={playButtonRef}
-          onClick={() => {
-            const token = localStorage.getItem('token');
-            if (token) {
-              navigate('/quiz-click-trap');
-            } else {
-              navigate('/login', { state: { from: '/quiz-click-trap' } });
-            }
-          }} 
+          onClick={handlePlayClick} 
           style={{ display: 'none' }}
         />
+
+        {/* Guest Warning Modal */}
+        {showGuestModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', pointerEvents: 'auto' }}>
+            <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', textAlign: 'center', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}>
+              <h2 style={{ color: 'white', marginBottom: '1rem' }}>Mode Invité</h2>
+              <p style={{ color: '#ccc', marginBottom: '2rem' }}>
+                Vous n'êtes pas connecté. Votre score ne sera pas enregistré.
+                Voulez-vous continuer ou vous connecter ?
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={() => navigate('/login', { state: { from: '/quiz-click-trap' } })}
+                  className="btn"
+                  style={{ background: '#3b82f6' }}
+                >
+                  <LogIn size={18} style={{ marginRight: '8px' }} /> Se connecter
+                </button>
+                <button 
+                  onClick={() => navigate('/quiz-click-trap')}
+                  className="btn"
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  <Gamepad2 size={18} style={{ marginRight: '8px' }} /> Jouer sans sauvegarder
+                </button>
+              </div>
+              <button 
+                onClick={() => setShowGuestModal(false)}
+                style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
