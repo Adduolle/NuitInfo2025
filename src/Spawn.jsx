@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useNavigate } from 'react-router-dom';
 import { Gamepad2, LogIn } from 'lucide-react';
 
-const Scene3D = () => {
+const Scene3D = ({ onGameClick, setDebugName }) => {
   const clock = new THREE.Clock();
   let mixer = null;
   useEffect(() => {
@@ -18,6 +18,14 @@ const Scene3D = () => {
       side: THREE.BackSide
     });
     const skyMesh = new THREE.Mesh(skyGeometry, skyMaterial);
+
+    // Raycaster setup
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const interactableObjects = []; // Store objects we want to interact with
+    let hoveredObject = null;
+    let isMouseDownOnObject = false;
+
 
     skyMesh.rotation.y = Math.PI / 4;
     skyMesh.rotation.x = Math.PI / 2.5;
@@ -48,7 +56,7 @@ const Scene3D = () => {
     const loader = new GLTFLoader();
 
     // Maison derrière la caméra (face caméra = 180°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonBack = gltf.scene;
       maisonBack.scale.set(3, 3, 3);
       maisonBack.position.set(-6, 0, 15);
@@ -57,20 +65,48 @@ const Scene3D = () => {
     }, undefined, error => console.error('Erreur maison derrière :', error));
 
     // Maison à gauche de la caméra (tournée -90°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonLeft = gltf.scene;
       maisonLeft.scale.set(3, 3, 3);
       maisonLeft.position.set(-1.6, 0, 6);
       maisonLeft.rotation.y = -Math.PI / 2;
+
+      // Make it interactable (PC Builder)
+      maisonLeft.traverse((child) => {
+        if (child.isMesh) {
+          // Only add the door meshes
+          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
+             console.log("Adding interactable object (PC Builder):", child.name);
+             child.userData.parentGroup = maisonLeft;
+             child.userData.gamePath = '/pc-builder-game'; // Set path
+             interactableObjects.push(child);
+          }
+        }
+      });
+
       scene.add(maisonLeft);
     }, undefined, error => console.error('Erreur maison gauche :', error));
 
     // Maison à droite de la caméra (tournée 90°)
-    loader.load(`/modeles/maison.glb`, gltf => {
+    loader.load(`/modeles/house.glb`, gltf => {
       const maisonRight = gltf.scene;
       maisonRight.scale.set(3, 3, 3);
       maisonRight.position.set(1.6, 0, -6);
       maisonRight.rotation.y = Math.PI / 2;
+      
+      // Make it interactable
+      maisonRight.traverse((child) => {
+        if (child.isMesh) {
+          // Only add the door meshes
+          if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
+             console.log("Adding interactable object:", child.name);
+             child.userData.parentGroup = maisonRight; // Link back to parent
+             child.userData.gamePath = '/quiz-click-trap'; // Set path
+             interactableObjects.push(child);
+          }
+        }
+      });
+      
       scene.add(maisonRight);
     }, undefined, error => console.error('Erreur maison droite :', error));
 
@@ -135,9 +171,82 @@ const Scene3D = () => {
       skyMesh.position.copy(camera.position);
       controls.update();
       renderer.render(scene, camera);
+
+      // Raycasting
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactableObjects);
+
+      if (intersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+        const object = intersects[0].object;
+        
+        // Highlight logic
+        if (hoveredObject !== object) {
+          // Reset previous highlight
+          if (hoveredObject && hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          
+          // Apply new highlight
+          hoveredObject = object;
+          if (hoveredObject.material) {
+            hoveredObject.currentHex = hoveredObject.material.emissive.getHex();
+            hoveredObject.material.emissive.setHex(0x555555); // Grayish glow
+          }
+        }
+      } else {
+        document.body.style.cursor = 'default';
+        if (hoveredObject) {
+          if (hoveredObject.material) {
+             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
+          }
+          hoveredObject = null;
+        }
+      }
     };
 
     animate();
+
+    const onMouseMove = (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    };
+
+    const onMouseDown = () => {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactableObjects);
+      if (intersects.length > 0) {
+        isMouseDownOnObject = true;
+      } else {
+        isMouseDownOnObject = false;
+      }
+    };
+
+    const onMouseUp = () => {
+      if (isMouseDownOnObject) {
+        raycaster.setFromCamera(mouse, camera);
+        // Raycast against EVERYTHING to debug
+        const allIntersects = raycaster.intersectObjects(scene.children, true);
+        if (allIntersects.length > 0) {
+           console.log("Global Click Debug: Hit", allIntersects[0].object.name, "Parent:", allIntersects[0].object.parent?.name);
+        }
+
+        const intersects = raycaster.intersectObjects(interactableObjects);
+        if (intersects.length > 0) {
+          console.log("3D Click detected on:", intersects[0].object.name);
+          const path = intersects[0].object.userData.gamePath;
+          if (path && onGameClick) {
+             console.log("Navigating to:", path);
+             onGameClick(path);
+          }
+        }
+      }
+      isMouseDownOnObject = false;
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -148,6 +257,9 @@ const Scene3D = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       renderer.dispose();
     };
   }, []);
@@ -157,45 +269,70 @@ const Scene3D = () => {
 
 export default function Spawn() {
   const navigate = useNavigate();
+  const [showGuestModal, setShowGuestModal] = React.useState(false);
+  const [pendingPath, setPendingPath] = React.useState(null);
+
+  const handleGameClick = (path) => {
+    console.log("handleGameClick triggered for:", path);
+    const token = localStorage.getItem('token');
+    if (token) {
+      console.log("Token found, navigating to", path);
+      navigate(path);
+    } else {
+      console.log("No token, showing guest modal for", path);
+      setPendingPath(path);
+      setShowGuestModal(true);
+    }
+  };
+  const [debugName, setDebugName] = React.useState("");
 
   return (
     <>
       <canvas id="three-canvas" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}></canvas>
-      <Scene3D />
+      <Scene3D onGameClick={handleGameClick} setDebugName={setDebugName} />
       
       {/* UI Overlay */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
-        <div style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-          <h1 style={{ color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Cyber City Spawn</h1>
-          
-          <div style={{ pointerEvents: 'auto', display: 'flex', gap: '1rem' }}>
-            <button onClick={() => navigate('/login')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LogIn size={20} /> Login / Profile
-            </button>
-          </div>
-        </div>
 
-        <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'auto', textAlign: 'center' }}>
-          <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', background: 'rgba(0,0,0,0.6)' }}>
-            <h2 style={{ color: 'white', margin: '0 0 1rem 0' }}>Mini-Jeux Disponibles</h2>
-            <button 
-              onClick={() => {
-                const token = localStorage.getItem('token');
-                if (token) {
-                  navigate('/quiz-click-trap');
-                } else {
-                  // Redirect to login with return path
-                  navigate('/login', { state: { from: '/quiz-click-trap' } });
-                }
-              }} 
-              className="btn" 
-              style={{ background: '#3b82f6', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem' }}
-            >
-              <Gamepad2 /> Jouer à "Piège à Clics"
-            </button>
-            <p style={{ color: '#aaa', marginTop: '10px', fontSize: '0.9rem' }}>Testez vos réflexes anti-phishing !</p>
+
+        {/* Hidden Logic Button (triggered by 3D click) */}
+
+
+
+        {/* Guest Warning Modal */}
+        {showGuestModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', pointerEvents: 'auto' }}>
+            <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', textAlign: 'center', background: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }}>
+              <h2 style={{ color: 'white', marginBottom: '1rem' }}>Mode Invité</h2>
+              <p style={{ color: '#ccc', marginBottom: '2rem' }}>
+                Vous n'êtes pas connecté. Votre score ne sera pas enregistré.
+                Voulez-vous continuer ou vous connecter ?
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={() => navigate('/login', { state: { from: pendingPath } })}
+                  className="btn"
+                  style={{ background: '#3b82f6' }}
+                >
+                  <LogIn size={18} style={{ marginRight: '8px' }} /> Se connecter
+                </button>
+                <button 
+                  onClick={() => navigate(pendingPath)}
+                  className="btn"
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  <Gamepad2 size={18} style={{ marginRight: '8px' }} /> Jouer sans sauvegarder
+                </button>
+              </div>
+              <button 
+                onClick={() => setShowGuestModal(false)}
+                style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Annuler
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
