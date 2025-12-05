@@ -274,15 +274,7 @@ export default function Spawn() {
       
       {/* UI Overlay */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
-        <div style={{ padding: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-          <h1 style={{ color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Cyber City Spawn</h1>
-          
-          <div style={{ pointerEvents: 'auto', display: 'flex', gap: '1rem' }}>
-            <button onClick={() => navigate('/login')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LogIn size={20} /> Login / Profile
-            </button>
-          </div>
-        </div>
+
 
         {/* Hidden Logic Button (triggered by 3D click) */}
 
