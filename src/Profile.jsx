@@ -109,7 +109,6 @@ return (
                     className="input-field w-full mb-3"
                 />
                 <button onClick={updateProfile} className="btn btn-secondary mb-2">Mettre à jour</button>
-                <p className="text-sm text-gray-400">(Mode test : modification active)</p>
             </div>
         </div>
 
