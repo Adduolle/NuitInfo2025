@@ -3,7 +3,7 @@ import GifLogin from "./GifLogin";
 import ClickTrapQuiz from "./ClickTrapQuiz";
 import PCBuilderGame from "./pc_builder_game";
 import Spawn from "./Spawn"; 
-import ProfileTest from "./ProfileTest";
+import Profile from "./Profile";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Inclusion from "./Inclusion";
 
@@ -18,6 +18,7 @@ export default function App() {
         <Route path="/contact" element={<Contact />}/> 
         <Route path="/ProfileTest" element={<ProfileTest />}/>
         <Route path="/inclusion" element={<Inclusion />} />
+        <Route path="/Profile" element={<Profile />}/> 
       </Routes>
     </BrowserRouter>
   )
