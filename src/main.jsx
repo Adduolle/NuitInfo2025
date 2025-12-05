@@ -4,6 +4,8 @@ import './index.css';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 
 const Scene3D = () => {
   const clock = new THREE.Clock();
@@ -127,6 +129,53 @@ const Scene3D = () => {
       const action = mixer.clipAction(gltf.animations[0]);
       action.play();
     }, undefined, error => console.error('Erreur maxwell le chat :', error));
+
+    const fontLoader = new FontLoader();
+
+    const createText = (txt, font, size = 0.5) => {
+      const geometry = new TextGeometry(txt, {
+        font: font,
+        size: size,
+        height: 0.1,
+        curveSegments: 8,
+        bevelEnabled: false
+      });
+
+      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+
+      return mesh;
+    };
+
+    fontLoader.load("/fonts/helvetiker_regular.typeface.json", font => {
+
+      // --- Texte devant la maison derrière ---
+      const textBack = createText("Quiz 1", font);
+      textBack.position.set(-2, 1.8, 4.3);
+      textBack.rotation.y = Math.PI;
+      scene.add(textBack);
+
+      // --- Texte devant la maison gauche ---
+      const textLeft = createText("Quiz 2", font);
+      textLeft.position.set(-4, 1.8, -1.7);
+      textLeft.rotation.y = -Math.PI / 2;
+      scene.add(textLeft);
+
+      // --- Texte devant la maison droite ---
+      const textRight = createText("Quiz 3", font);
+      textRight.position.set(4, 1.8, 1.7);
+      textRight.rotation.y = Math.PI / 2;
+      scene.add(textRight);
+
+      // --- Texte devant le city hall ---
+      const textCity = createText("Grand Quiz", font);
+      textCity.position.set(2, 1.8, -5);
+      textCity.rotation.y = Math.PI;
+      scene.add(textCity);
+
+    });
 
     const animate = () => {
       requestAnimationFrame(animate);
