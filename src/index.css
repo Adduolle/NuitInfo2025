@@ -33,10 +33,12 @@ body {
     var(--bg-gradient-end)
   );
   color: var(--text-main);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Utilities */

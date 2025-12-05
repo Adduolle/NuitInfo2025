@@ -19,6 +19,10 @@ mongoose
 const User = mongoose.model("User", {
   password: String,
   gifUrl: { type: String, unique: true },
+  scores: {
+    clickTrap: { type: Number, default: 0 },
+    // Future games can be added here
+  },
 });
 
 // REGISTER
@@ -33,7 +37,7 @@ app.post("/register", async (req, res) => {
 
   const hashed = await bcrypt.hash(password, 10);
 
-  await User.create({ password: hashed, gifUrl });
+  await User.create({ password: hashed, gifUrl, scores: { clickTrap: 0 } });
 
   res.json({ success: true });
 });
@@ -51,7 +55,38 @@ app.post("/login", async (req, res) => {
 
   const token = jwt.sign({ id: user._id }, "SECRET123");
 
-  res.json({ token, gifUrl: user.gifUrl });
+  res.json({ token, gifUrl: user.gifUrl, scores: user.scores });
+});
+
+// SAVE SCORE
+app.post("/score", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  const { gameId, score } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, "SECRET123");
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Initialize scores object if it doesn't exist (for old users)
+    if (!user.scores) user.scores = {};
+
+    // Update score only if it's better
+    const currentScore = user.scores[gameId] || 0;
+    if (score > currentScore) {
+      user.scores[gameId] = score;
+      // Mark as modified because we might be modifying a mixed type or nested object
+      user.markModified("scores");
+      await user.save();
+    }
+
+    res.json({ success: true, bestScore: user.scores[gameId] });
+  } catch (e) {
+    console.error(e);
+    res.status(401).json({ error: "Invalid token or server error" });
+  }
 });
 
 // VERIFY SESSION
@@ -64,7 +99,7 @@ app.get("/verify", async (req, res) => {
     const user = await User.findById(decoded.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json({ gifUrl: user.gifUrl });
+    res.json({ gifUrl: user.gifUrl, scores: user.scores });
   } catch (e) {
     res.status(401).json({ error: "Invalid token" });
   }
