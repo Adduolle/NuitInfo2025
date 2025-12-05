@@ -19,10 +19,9 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
     });
     const skyMesh = new THREE.Mesh(skyGeometry, skyMaterial);
 
-    // Raycaster setup
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    const interactableObjects = []; // Store objects we want to interact with
+    const interactableObjects = [];
     let hoveredObject = null;
     let isMouseDownOnObject = false;
 
@@ -55,15 +54,12 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
     const loader = new GLTFLoader();
 
-    // Maison derrière la caméra (face caméra = 180°)
     loader.load(`/modeles/house.glb`, gltf => {
       const maisonBack = gltf.scene;
       maisonBack.scale.set(3, 3, 3);
       maisonBack.position.set(-6, 0, 15);
       maisonBack.rotation.y = Math.PI;
 
-
-      
       // Make it interactable (Contact)
       maisonBack.traverse((child) => {
         if (child.isMesh) {
@@ -79,21 +75,18 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(maisonBack);
     }, undefined, error => console.error('Erreur maison derrière :', error));
 
-    // Maison à gauche de la caméra (tournée -90°)
     loader.load(`/modeles/house.glb`, gltf => {
       const maisonLeft = gltf.scene;
       maisonLeft.scale.set(3, 3, 3);
       maisonLeft.position.set(-1.6, 0, 6);
       maisonLeft.rotation.y = -Math.PI / 2;
 
-      // Make it interactable (PC Builder)
       maisonLeft.traverse((child) => {
         if (child.isMesh) {
-          // Only add the door meshes
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
             console.log("Adding interactable object (PC Builder):", child.name);
             child.userData.parentGroup = maisonLeft;
-            child.userData.gamePath = '/pc-builder-game'; // Set path
+            child.userData.gamePath = '/pc-builder-game';
             interactableObjects.push(child);
           }
         }
@@ -102,21 +95,18 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(maisonLeft);
     }, undefined, error => console.error('Erreur maison gauche :', error));
 
-    // Maison à droite de la caméra (tournée 90°)
     loader.load(`/modeles/house.glb`, gltf => {
       const maisonRight = gltf.scene;
       maisonRight.scale.set(3, 3, 3);
       maisonRight.position.set(1.6, 0, -6);
       maisonRight.rotation.y = Math.PI / 2;
 
-      // Make it interactable
       maisonRight.traverse((child) => {
         if (child.isMesh) {
-          // Only add the door meshes
           if (child.name === 'Cube004_0' || child.name === 'Plane012_0') {
             console.log("Adding interactable object:", child.name);
-            child.userData.parentGroup = maisonRight; // Link back to parent
-            child.userData.gamePath = '/quiz-click-trap'; // Set path
+            child.userData.parentGroup = maisonRight;
+            child.userData.gamePath = '/quiz-click-trap';
             interactableObjects.push(child);
           }
         }
@@ -125,16 +115,12 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(maisonRight);
     }, undefined, error => console.error('Erreur maison droite :', error));
 
-    // City hall plus loin devant (face caméra)
     loader.load(`/modeles/city_hall.glb`, gltf => {
       const cityHall = gltf.scene;
       cityHall.position.set(0, 0, -26);
       scene.add(cityHall);
     }, undefined, error => console.error('Erreur city hall :', error));
 
-      // --- Texte devant la maison derrière ---
-      // const textBack = createText("Contact", font); // This line was commented out as createText and font are not defined.
-    // Devant la maison derrière la caméra
     loader.load('/modeles/sign.glb', gltf => {
       const signBack = gltf.scene;
       signBack.scale.set(1, 1, 1);
@@ -142,7 +128,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(signBack);
     }, undefined, error => console.error('Erreur panneau derrière :', error));
 
-    // Devant la maison gauche
     loader.load('/modeles/sign.glb', gltf => {
       const signLeft = gltf.scene;
       signLeft.scale.set(1, 1, 1);
@@ -151,7 +136,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(signLeft);
     }, undefined, error => console.error('Erreur panneau gauche :', error));
 
-    // Devant la maison droite
     loader.load('/modeles/sign.glb', gltf => {
       const signRight = gltf.scene;
       signRight.scale.set(1, 1, 1);
@@ -160,7 +144,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(signRight);
     }, undefined, error => console.error('Erreur panneau droite :', error));
 
-    // Devant le city hall
     loader.load('/modeles/sign.glb', gltf => {
       const signCity = gltf.scene;
       signCity.scale.set(1, 1, 1);
@@ -169,7 +152,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       scene.add(signCity);
     }, undefined, error => console.error('Erreur panneau city hall :', error));
 
-    // Maxwell the cat
     loader.load('/modeles/maxwell.glb', gltf => {
       const maxwell = gltf.scene;
       maxwell.scale.set(3, 3, 3);
@@ -214,13 +196,11 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
 
     // Fonction pour créer du texte plat avec CanvasTexture
     const createFlatText = (txt, width = 1, height = 0.3, fontSize = 64, color = 'black') => {
-      // Créer le canvas
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 128;
       const ctx = canvas.getContext('2d');
 
-      // Dessiner le texte
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.font = `${fontSize}px Arial`;
       ctx.fillStyle = color;
@@ -228,12 +208,10 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       ctx.textBaseline = 'middle';
       ctx.fillText(txt, canvas.width / 2, canvas.height / 2);
 
-      // Créer la texture
       const texture = new THREE.CanvasTexture(canvas);
       texture.flipY = true;
       texture.needsUpdate = true;
 
-      // Matériau et plan
       const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
       const geometry = new THREE.PlaneGeometry(width, height);
       const mesh = new THREE.Mesh(geometry, material);
@@ -241,7 +219,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       return mesh;
     };
 
-    // --- Texte devant les panneaux ---
     const textBack = createFlatText("Bureau", 3, 0.9);
     textBack.position.set(-2, 3.75, 5);
     textBack.rotation.y = Math.PI;
@@ -280,7 +257,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
       controls.update();
       renderer.render(scene, camera);
 
-      // Raycasting
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(interactableObjects);
 
@@ -288,18 +264,15 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
         document.body.style.cursor = 'pointer';
         const object = intersects[0].object;
 
-        // Highlight logic
         if (hoveredObject !== object) {
-          // Reset previous highlight
           if (hoveredObject && hoveredObject.material) {
             hoveredObject.material.emissive.setHex(hoveredObject.currentHex);
           }
 
-          // Apply new highlight
           hoveredObject = object;
           if (hoveredObject.material) {
             hoveredObject.currentHex = hoveredObject.material.emissive.getHex();
-            hoveredObject.material.emissive.setHex(0x555555); // Grayish glow
+            hoveredObject.material.emissive.setHex(0x555555);
           }
         }
       } else {
@@ -333,7 +306,6 @@ const Scene3D = ({ onGameClick, setDebugName }) => {
     const onMouseUp = () => {
       if (isMouseDownOnObject) {
         raycaster.setFromCamera(mouse, camera);
-        // Raycast against EVERYTHING to debug
         const allIntersects = raycaster.intersectObjects(scene.children, true);
         if (allIntersects.length > 0) {
           console.log("Global Click Debug: Hit", allIntersects[0].object.name, "Parent:", allIntersects[0].object.parent?.name);
