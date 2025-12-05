@@ -1,21 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Search, User, LogOut, Image as ImageIcon, Sparkles, ArrowRight, X } from "lucide-react";
 import "./index.css"; // Ensure styles are applied
 import MerguezAuth from "./MerguezAuth";
 
+import { useNavigate, useLocation } from "react-router-dom";
+
 export default function GifLogin() {
-  // Use environment variable or fallback for demo
-  const TENOR_KEY = "LIVDSRZULELA"; // Public test key
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/";
 
-  const [query, setQuery] = useState("funny cat");
   const [gifs, setGifs] = useState([]);
+  const [query, setQuery] = useState("");
   const [selectedGif, setSelectedGif] = useState(null);
-  const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+  const [password, setPassword] = useState(""); // Stores the merguez cooking times
+  const [isRegistering, setIsRegistering] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
 
+  const [showLoginModal, setShowLoginModal] = useState(!!location.state?.from);
+
+  // Debounce search
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query) searchGifs(query);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Initial load
+  useEffect(() => {
+    searchGifs("fail");
+    
+    // Check session
     const token = localStorage.getItem("token");
     if (token) {
       fetch("http://localhost:3001/verify", {
@@ -34,44 +53,28 @@ export default function GifLogin() {
     }
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (query) searchGifs(query);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [query]);
-
   async function searchGifs(q) {
     setLoading(true);
     try {
-      const url = `https://g.tenor.com/v1/search?q=${encodeURIComponent(q)}&key=${TENOR_KEY}&limit=24&media_filter=minimal`;
-      const res = await fetch(url);
+      // Use public key for demo
+      const API_KEY = "LIVDSRZULELA"; 
+      const res = await fetch(`https://g.tenor.com/v1/search?q=${q}&key=${API_KEY}&limit=12&media_filter=minimal`);
       const data = await res.json();
-      const mapped = (data.results || []).map((r) => {
-        const media = r.media && r.media[0];
-        // Prefer smaller formats for preview
-        const preview = (media && media.tinygif && media.tinygif.url) || 
-                        (media && media.nanogif && media.nanogif.url) || 
-                        (media && media.gif && media.gif.url);
-        
-        // Prefer medium quality for selection
-        const gifUrl = (media && media.mediumgif && media.mediumgif.url) || 
-                       (media && media.gif && media.gif.url) || 
-                       r.url;
-                       
-        return { id: r.id, url: gifUrl, preview };
-      });
-      setGifs(mapped);
-    } catch (e) {
-      console.error("Failed to fetch gifs", e);
-      setGifs([]);
+      
+      if (data.results) {
+        const formatted = data.results.map(g => ({
+          id: g.id,
+          url: g.media[0].tinygif.url, // Use tinygif for better performance
+          preview: g.media[0].tinygif.url
+        }));
+        setGifs(formatted);
+      }
+    } catch (err) {
+      console.error("Tenor API Error", err);
     } finally {
       setLoading(false);
     }
   }
-
-  const [password, setPassword] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -105,6 +108,8 @@ export default function GifLogin() {
           if (data.gifUrl) {
             setSelectedGif({ url: data.gifUrl, preview: data.gifUrl });
           }
+          // Redirect back to where they came from (or spawn)
+          navigate(from);
         }
       } else {
         alert(data.error || "Authentication failed");
@@ -122,14 +127,10 @@ export default function GifLogin() {
     localStorage.removeItem("token"); // Clear session
   };
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
-
-  // ... (keep existing state and logic: query, gifs, selectedGif, loading, password, isRegistering, loggedIn, etc.)
-  // We need to make sure we don't lose the state logic.
-
-  // ... (keep useEffects and searchGifs)
-
-  // ... (keep handleLogin and handleLogout)
+  // Stable handler for MerguezAuth to prevent infinite re-renders
+  const handleMerguezUpdate = useCallback((times) => {
+    setPassword(JSON.stringify(times));
+  }, []);
   
   // WRAPPER for the whole component
   return (
@@ -237,7 +238,7 @@ export default function GifLogin() {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   Security Verification: Grill your Merguez
                 </label>
-                <MerguezAuth onUpdate={(times) => setPassword(JSON.stringify(times))} />
+                <MerguezAuth onUpdate={handleMerguezUpdate} />
               </div>
 
               <button type="submit" className="btn" style={{ justifyContent: 'center', marginTop: '1rem' }}>
