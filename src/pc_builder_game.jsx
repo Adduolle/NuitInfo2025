@@ -249,17 +249,17 @@ export default function PCBuilderGame() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 min-h-screen text-gray-200">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold">Construire son propre PC — jeu pédagogique</h1>
-        <p className="text-sm text-gray-600 mt-1">Objectif tiré : <span className="font-semibold">{objective.title}</span> — {objective.desc}</p>
+        <h1 className="text-2xl font-bold">Construire son propre PC - Jeu pédagogique</h1>
+        <p className="text-sm text-gray-300 mt-1">Objectif tiré : <span className="font-semibold">{objective.title}</span> — {objective.desc}</p>
       </header>
 
       {stage === "select" && (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <h2 className="font-semibold mb-2">1) Sélectionnez les composants et outils (attention aux intrus)</h2>
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white text-gray-800 rounded-lg shadow p-4 max-h-[500px] overflow-y-auto">
               <ul className="space-y-2">
                 {INVENTORY.map((it) => (
                   <li key={it.id} className="flex items-center justify-between">
@@ -283,7 +283,7 @@ export default function PCBuilderGame() {
           </div>
 
           <aside className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold">Panier</h3>
+            <h3 className="font-semibold text-gray-900">Panier</h3>
             <div className="mt-2 text-sm text-gray-700">
               <div>Articles sélectionnés: <span className="font-medium">{selected.length}</span></div>
               <div className="mt-2">Total estimé: <span className="font-bold">{totalPrice} €</span></div>
@@ -306,7 +306,7 @@ export default function PCBuilderGame() {
         <section>
           <h2 className="font-semibold mb-2">2) Ordonnez les étapes d'assemblage</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white text-gray-800 rounded-lg shadow p-4 max-h-[400px] overflow-y-auto">
               <p className="text-sm text-gray-600">Glissez avec les boutons ↑ ↓ pour ordonner. Seules apparaissent les étapes liées aux composants choisis.</p>
               <ol className="mt-4 space-y-2">
                 {orderedSteps.map((sid, idx) => {
@@ -325,7 +325,7 @@ export default function PCBuilderGame() {
             </div>
 
             <aside className="bg-white rounded-lg shadow p-4">
-              <h3 className="font-semibold">Résumé</h3>
+              <h3 className="font-semibold text-gray-900">Résumé</h3>
               <div className="mt-2 text-sm text-gray-700">
                 <div>Étapes visibles: <span className="font-medium">{visibleSteps.length}</span></div>
                 <div className="mt-2">Prix actuel: <span className="font-bold">{totalPrice} €</span></div>
@@ -345,12 +345,15 @@ export default function PCBuilderGame() {
       {stage === "result" && (
         <section>
           <h2 className="font-semibold mb-2">Résultat</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow p-4">
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Diagnostic */}
+            <div className="bg-white text-gray-800 rounded-lg shadow p-4">
               <h3 className="font-semibold">Diagnostic</h3>
               <div className="mt-3">
                 <div className={`p-3 rounded ${result.diagnostic.status === 'ok' ? 'bg-green-50' : result.diagnostic.status === 'no_boot' ? 'bg-yellow-50' : 'bg-red-50'}`}>
-                  <div className="font-medium">Statut: {result.diagnostic.status === 'ok' ? 'Démarrage OK' : result.diagnostic.status === 'no_boot' ? 'Ne démarre pas' : 'Risque de panne / brûle'}</div>
+                  <div className="font-medium">
+                    Statut: {result.diagnostic.status === 'ok' ? 'Démarrage OK' : result.diagnostic.status === 'no_boot' ? 'Ne démarre pas' : 'Risque de panne / brûle'}
+                  </div>
                   <div className="text-sm text-gray-700 mt-2">{result.diagnostic.message}</div>
                 </div>
 
@@ -363,38 +366,44 @@ export default function PCBuilderGame() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4">
+            {/* Correctif & finances */}
+            <div className="bg-white text-gray-800 rounded-lg shadow p-4">
               <h3 className="font-semibold">Correctif & finances</h3>
               <div className="mt-3 text-sm text-gray-700">
                 <div>Coût minimal estimé pour l'objectif: <span className="font-bold">{result.minCost} €</span></div>
                 <div>Votre coût: <span className="font-bold">{result.totalPrice} €</span></div>
-                <div className={`mt-2 ${result.savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>Économie potentielle: <span className="font-semibold">{Math.abs(result.savings)} €</span> {result.savings >=0 ? ' (vous avez dépensé moins que le coût minimal estimé)' : ' (vous avez dépensé plus que le coût minimal estimé)'} </div>
-
+                <div className={`mt-2 ${result.savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>Économie potentielle: <span className="font-semibold">{Math.abs(result.savings)} €</span> {result.savings >=0 ? ' (vous avez dépensé moins que le coût minimal estimé)' : ' (vous avez dépensé plus que le coût minimal estimé)'}</div>
+                
                 <div className="mt-4">
                   <h4 className="font-medium">Suggestions</h4>
                   <ul className="mt-2 list-disc list-inside text-sm">
                     {selectedItems.filter(it => it.intrus).length > 0 ? (
                       <li>Retirer les éléments intrus sélectionnés pour gagner des points et de l'argent.</li>
                     ) : <li>Aucun intrus détecté — bien joué !</li>}
-
                     {result.missingEssentials.length > 0 ? (
                       <li>Ajouter les composants manquants:<br/>{result.missingEssentials.map(m => (<span key={m}>{m}<br/></span>))}</li>
                     ) : (
                       <li>Tous les composants essentiels sont présents.</li>
                     )}
-
                     {result.diagnostic.status === 'burn' && (
                       <li>Choisir une alimentation avec plus de watts (ex: 650W) pour éviter la surcharge.</li>
                     )}
                   </ul>
                 </div>
-
-                {result.diagnostic.status === 'ok' && (<img src="assets/working_pc.png" alt="PC OK" className="w-full mb-4 rounded"/>)}{result.diagnostic.status === 'burn' && (<img src="assets/burning_pc.png" alt="PC burn" className="w-full mb-4 rounded"/>)}{result.diagnostic.status === 'no_boot' && (<img src="assets/sleeping_pc.png" alt="PC no boot" className="w-full mb-4 rounded"/>)}<div className="mt-4 flex gap-2">
-                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded" onClick={resetGame}>Rejouer (nouvel objectif)</button>
-                  <button className="flex-1 border py-2 rounded" onClick={() => { setStage('select'); }}>Modifier la sélection</button>
-                </div>
               </div>
             </div>
+
+            {/* Image PC */}
+            <div className="bg-white text-gray-800 rounded-lg shadow p-4 flex items-center justify-center">
+              {result.diagnostic.status === 'ok' && (<img src="./src/assets/working_pc.png" alt="PC OK" className="h-[400px] rounded"/>)}
+              {result.diagnostic.status === 'burn' && (<img src="./src/assets/burning_pc.png" alt="PC burn" className="h-[400px] rounded"/>)}
+              {result.diagnostic.status === 'no_boot' && (<img src="./src/assets/sleeping_pc.png" alt="PC no boot" className="h-[400px] rounded"/>)}
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded" onClick={resetGame}>Rejouer (nouvel objectif)</button>
+            <button className="flex-1 border py-2 rounded" onClick={() => { setStage('select'); }}>Modifier la sélection</button>
           </div>
 
           <div className="mt-6 text-xs text-gray-500">Note: Les prix et puissances sont indicatifs et simplifiés pour le jeu. Le but est pédagogique — expliquer les principes (compatibilité, alimentation, ordre d'assemblage).</div>
